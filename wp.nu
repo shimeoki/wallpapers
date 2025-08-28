@@ -66,13 +66,13 @@ def files []: nothing -> string {
 
 def 'files path' []: string -> string {
     let path = $in
-    let prefix = ($path | str substring ..0)
+    let prefix = ($path | path parse | get parent | str substring ..0)
 
     # todo: windows paths?
-    if ($path | path exists) and (($prefix == '.') or ($prefix == '/')) {
+    if ($prefix == '.') or ($prefix == '/') {
         $path
     } else {
-        $path | path join (files)
+        [ (files) $path ] | path join
     } | path expand
 }
 
@@ -124,7 +124,7 @@ export def add [
 ]: nothing -> nothing {
     let f = ($file | files path | files read)
 
-    if (list | get --optional $f.hash) == null {
+    if (list | get --optional $f.hash) != null {
         error make { msg: "file is already listed" }
     }
 
