@@ -202,6 +202,16 @@ export def 'tag list' []: nothing -> list<string> {
     list | values | get tags | flatten | uniq
 }
 
+export def 'tag rename' [old: string, new: string] {
+    list | transpose hash stored | each {|wp|
+        let tags = ($wp.stored.tags | each {|tag|
+            if ($tag == $old) { $new } else { $tag }
+        } | uniq)
+
+        { hash: $wp.hash, stored: ($wp.stored | update tags $tags) }
+    } | transpose --as-record --header-row --ignore-titles | save --force (data)
+}
+
 export def by-tags []: closure -> list<string> {
     let closure = $in
     list | items {|hash, stored|
