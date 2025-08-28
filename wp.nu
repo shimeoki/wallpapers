@@ -198,6 +198,10 @@ export def del [
     }
 }
 
+export def 'tag list' []: nothing -> list<string> {
+    list | values | get tags | flatten | uniq
+}
+
 export def by-tags []: closure -> list<string> {
     let closure = $in
     list | items {|hash, stored|
