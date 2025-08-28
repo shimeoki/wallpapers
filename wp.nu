@@ -207,3 +207,5 @@ export def 'tag filter' []: closure -> list<string> {
         | if $in { $hash }
     } | compact
 }
+
+export alias add = store add
