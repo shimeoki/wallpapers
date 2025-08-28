@@ -165,6 +165,8 @@ export def add [
         git reset HEAD
         git add $store_path $data
         git commit -m $"store: add ($hash)"
+    } else {
+        print $hash
     }
 }
 
@@ -191,5 +193,7 @@ export def del [
         git reset HEAD
         git add $store_path $data
         git commit -m $"store: del ($hash)"
+    } else {
+        print $hash
     }
 }
