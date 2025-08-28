@@ -52,6 +52,18 @@ def source []: nothing -> string {
     ($source | path expand)
 }
 
+def 'source path' []: string -> string {
+    let path = $in
+    let prefix = ($path | str substring ..0)
+
+    # todo: windows paths?
+    if ($prefix == '.') or ($prefix == '/') {
+        $path
+    } else {
+        $path | path join (source)
+    } | path expand
+}
+
 export def list []: nothing -> record {
     data | open
 }
