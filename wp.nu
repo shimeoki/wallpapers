@@ -102,18 +102,19 @@ export def list []: nothing -> record {
     data | open
 }
 
-def check []: record -> record {
+def check [
+]: record<extension: string, source: string, tags: list<string>> -> nothing {
     let record = $in
 
-    if not ($record.file | path exists) {
-        error make { msg: "file doesn't exist" }
+    if ($record.extension not-in $extensions) {
+        error make { msg: "unsupported extension" }
     }
+
+    # no source check
 
     if ($record.tags | is-empty) {
         error make { msg: "tags are empty" }
     }
-
-    $record
 }
 
 export def add [
@@ -121,12 +122,14 @@ export def add [
     source: string
     ...tags: string
 ]: nothing -> nothing {
-    let record = ({ $file: { source: $source tags: $tags } } | check)
-    let list = list
+    let f = ($file | files path | files read)
 
-    if ($list | get --optional $file) != null {
+    if (list | get --optional $f.hash) == null {
         error make { msg: "file is already listed" }
     }
 
-    $record | to toml | save --append (data)
+    let record = ({ extension: $f.extension, source: $source, tags: $tags })
+    $record | check
+
+    { $f.hash: $record } | to toml | save --append (data)
 }
