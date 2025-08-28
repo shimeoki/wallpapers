@@ -138,20 +138,23 @@ export def add [
     let file_path = ($file | files path)
     let file_read = ($file_path | files read)
 
+    let hash = $file_read.hash
+    let extension = $file_read.extension
+
     let list = list # cache
 
     if ($list | get --optional $file_read.hash) != null {
         error make { msg: "file is already listed" }
     }
 
-    let record = ({
-        extension: $file_read.extension
+    let stored = ({
+        extension: $extension
         source: $source
         tags: $tags
     } | check)
 
-    let store_path = (store path $file_read.hash $file_read.extension)
+    let store_path = (store path $hash $extension)
 
     cp $file_path $store_path
-    $list | insert $file_read.hash $record | save --force (data)
+    $list | insert $hash $stored | save --force (data)
 }
