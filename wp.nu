@@ -212,7 +212,7 @@ export def 'tag rename' [old: string, new: string] {
     } | transpose --as-record --header-row --ignore-titles | save --force (data)
 }
 
-export def by-tags []: closure -> list<string> {
+export def 'tag filter' []: closure -> list<string> {
     let closure = $in
     list | items {|hash, stored|
         do $closure $stored.tags
