@@ -197,3 +197,11 @@ export def del [
         print $hash
     }
 }
+
+export def by-tags []: closure -> list<string> {
+    let closure = $in
+    list | items {|hash, stored|
+        do $closure $stored.tags
+        | if $in { $hash }
+    } | compact
+}
