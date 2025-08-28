@@ -4,6 +4,10 @@ const files = ("files" | path expand)
 const data = ("data.toml" | path expand)
 
 export def list []: nothing -> table {
+    if not ($data | path exists) {
+        touch $data
+    }
+
     []
 }
 
