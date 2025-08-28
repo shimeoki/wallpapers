@@ -153,7 +153,7 @@ export def add [
     let stored = ({
         extension: $extension
         source: $source
-        tags: $tags
+        tags: ($tags | uniq)
     } | check)
 
     let store_path = (store path $hash $extension)
