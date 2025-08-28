@@ -3,8 +3,14 @@
 # fix: don't hardcode default source
 const default_source = '/home/d/Pictures/bg/landscape'
 
+const envs = {
+    store:  'WP_STORE'
+    data:   'WP_DATA'
+    source: 'WP_SOURCE'
+}
+
 def store []: nothing -> string {
-    let store = ($env | get --optional WP_STORE | default "files")
+    let store = ($env | get --optional $envs.store | default "files")
 
     if not ($store | path exists) {
         # todo: logging?
@@ -12,17 +18,17 @@ def store []: nothing -> string {
     }
 
     if ($store | path type) != dir {
-        error make { msg: "'WP_STORE' is not a directory" }
+        error make { msg: $"'($envs.store)' is not a directory" }
     }
 
     ($store | path expand)
 }
 
 def data []: nothing -> string {
-    let data = ($env | get --optional WP_DATA | default "store.toml")
+    let data = ($env | get --optional $envs.data | default "store.toml")
 
     if ($data | path parse | get extension) != toml {
-        error make { msg: "'WP_DATA' extension should be toml" }
+        error make { msg: $"'($envs.data)' extension should be toml" }
     }
 
     if not ($data | path exists) {
@@ -32,21 +38,21 @@ def data []: nothing -> string {
 
     # todo: handle symlinks?
     if ($data | path type) != file {
-        error make { msg: "'WP_DATA' is not a file" }
+        error make { msg: $"'($envs.data)' is not a file" }
     }
 
     ($data | path expand)
 }
 
 def source []: nothing -> string {
-    let source = ($env | get --optional WP_SOURCE | default $default_source)
+    let source = ($env | get --optional $envs.source | default $default_source)
 
     if not ($source | path exists) {
-        error make { msg: "'WP_SOURCE' doesn't exist" }
+        error make { msg: $"'($envs.source)' doesn't exist" }
     }
 
     if ($source | path type) != dir {
-        error make { msg: "'WP_SOURCE' is not a directory" }
+        error make { msg: $"'($envs.source)' is not a directory" }
     }
 
     ($source | path expand)
