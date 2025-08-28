@@ -47,6 +47,10 @@ export def 'store file' []: nothing -> string {
     $data | path expand
 }
 
+export def 'store data' [hash: string]: nothing -> record {
+    list | get --optional $hash
+}
+
 def 'store path' [hash: string, extension: string]: nothing -> string {
     {
         parent: (store dir)
