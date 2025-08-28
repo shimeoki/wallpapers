@@ -69,10 +69,13 @@ def 'files path' []: string -> string {
     let prefix = ($path | path parse | get parent | str substring ..0)
 
     # todo: windows paths?
-    if ($prefix == '.') or ($prefix == '/') {
-        $path
+    let relative = ($prefix == '.' or $prefix == '/')
+    let in_files = ([ (files) $path ] | path join)
+
+    if (not $relative) and ($in_files | path exists) {
+        $in_files
     } else {
-        [ (files) $path ] | path join
+        $path
     } | path expand
 }
 
