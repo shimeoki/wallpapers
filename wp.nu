@@ -134,6 +134,7 @@ export def add [
     file: string
     source: string
     ...tags: string
+    --git (-g)
 ]: nothing -> nothing {
     let file_path = ($file | files path)
     let file_read = ($file_path | files read)
@@ -161,8 +162,11 @@ export def add [
 
 export def del [
     hash: string
+    --git (-g)
 ]: nothing -> nothing {
-    let list = list # cache
+    # cache
+    let list = list
+    let data = data
 
     let stored = ($list | get --optional $hash)
 
@@ -173,5 +177,11 @@ export def del [
     let store_path = (store path $hash $stored.extension)
 
     rm $store_path
-    $list | reject $hash | save --force (data)
+    $list | reject $hash | save --force $data
+
+    if ($git) {
+        git reset HEAD
+        git add $store_path $data
+        git commit -m $"store: del ($hash)"
+    }
 }
