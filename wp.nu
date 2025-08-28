@@ -2,8 +2,8 @@
 
 # fix: don't hardcode default source
 const defaults = {
-    store: './store'
-    data:  './store.toml'
+    store: (path self '.' | path join 'store' | path expand)
+    data:  (path self '.' | path join 'store.toml' | path expand)
     files: '/home/d/Pictures/bg/landscape'
 }
 
