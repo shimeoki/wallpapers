@@ -2,3 +2,11 @@
 
 const files = ("files" | path expand)
 const data = ("data.toml" | path expand)
+
+export def add [
+    file: string
+    source: string
+    ...tags: string
+]: nothing -> nothing {
+
+}
