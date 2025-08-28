@@ -3,23 +3,23 @@
 # fix: don't hardcode default source
 const default_source = '/home/d/Pictures/bg/landscape'
 
-def files []: nothing -> string {
-    let files = ($env | get --optional WP_FILES | default "files")
+def store []: nothing -> string {
+    let store = ($env | get --optional WP_STORE | default "files")
 
-    if not ($files | path exists) {
+    if not ($store | path exists) {
         # todo: logging?
-        mkdir $files
+        mkdir $store
     }
 
-    if ($files | path type) != dir {
-        error make { msg: "'WP_FILES' is not a directory" }
+    if ($store | path type) != dir {
+        error make { msg: "'WP_STORE' is not a directory" }
     }
 
-    ($files | path expand)
+    ($store | path expand)
 }
 
 def data []: nothing -> string {
-    let data = ($env | get --optional WP_DATA | default "data.toml")
+    let data = ($env | get --optional WP_DATA | default "store.toml")
 
     if ($data | path parse | get extension) != toml {
         error make { msg: "'WP_DATA' extension should be toml" }
