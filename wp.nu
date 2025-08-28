@@ -105,8 +105,8 @@ export def list []: nothing -> record {
     data | open
 }
 
-def check [
-]: record<extension: string, source: string, tags: list<string>> -> nothing {
+def check [ # returns the same record
+]: record<extension: string, source: string, tags: list<string>> -> record {
     let record = $in
 
     if ($record.extension not-in $extensions) {
@@ -118,6 +118,8 @@ def check [
     if ($record.tags | is-empty) {
         error make { msg: "tags are empty" }
     }
+
+    $record
 }
 
 export def add [
@@ -125,14 +127,26 @@ export def add [
     source: string
     ...tags: string
 ]: nothing -> nothing {
-    let f = ($file | files path | files read)
+    let file_path = ($file | files path)
+    let file_read = ($file_path | files read)
 
-    if (list | get --optional $f.hash) != null {
+    if (list | get --optional $file_read.hash) != null {
         error make { msg: "file is already listed" }
     }
 
-    let record = ({ extension: $f.extension, source: $source, tags: $tags })
-    $record | check
+    let record = ({
+        extension: $file_read.extension
+        source: $source
+        tags: $tags
+    } | check)
 
-    { $f.hash: $record } | to toml | save --append (data)
+    let store_path = ({
+        parent: (store)
+        stem: $file_read.hash
+        extension: $file_read.extension
+    } | path join)
+
+    cp $file_path $store_path
+
+    { $file_read.hash: $record } | to toml | save --append (data)
 }
