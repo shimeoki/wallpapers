@@ -27,7 +27,7 @@ def store []: nothing -> string {
         error make { msg: $"'($envs.store)' is not a directory" }
     }
 
-    ($store | path expand)
+    $store | path expand
 }
 
 def data []: nothing -> string {
@@ -47,7 +47,7 @@ def data []: nothing -> string {
         error make { msg: $"'($envs.data)' is not a file" }
     }
 
-    ($data | path expand)
+    $data | path expand
 }
 
 def files []: nothing -> string {
@@ -61,7 +61,7 @@ def files []: nothing -> string {
         error make { msg: $"'($envs.files)' is not a directory" }
     }
 
-    ($files | path expand)
+    $files | path expand
 }
 
 def 'files path' []: string -> string {
