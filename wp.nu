@@ -1,16 +1,13 @@
 #!/usr/bin/env nu
 
-# fix: don't hardcode default source
 const defaults = {
     store: (path self '.' | path join 'store' | path expand)
     data:  (path self '.' | path join 'store.toml' | path expand)
-    files: '/home/d/Pictures/bg/landscape'
 }
 
 const envs = {
     store: 'WP_STORE'
     data:  'WP_DATA'
-    files: 'WP_FILES'
 }
 
 const extensions = [ png jpg jpeg ]
@@ -56,35 +53,6 @@ def data []: nothing -> string {
     }
 
     $data | path expand
-}
-
-def files []: nothing -> string {
-    let files = ($env | get --optional $envs.files | default $defaults.files)
-
-    if not ($files | path exists) {
-        error make { msg: $"'($envs.files)' doesn't exist" }
-    }
-
-    if ($files | path type) != dir {
-        error make { msg: $"'($envs.files)' is not a directory" }
-    }
-
-    $files | path expand
-}
-
-def 'files path' []: string -> string {
-    let path = $in
-    let prefix = ($path | path parse | get parent | str substring ..0)
-
-    # todo: windows paths?
-    let relative = ($prefix == '.' or $prefix == '/')
-    let in_files = ([ (files) $path ] | path join)
-
-    if (not $relative) and ($in_files | path exists) {
-        $in_files
-    } else {
-        $path
-    } | path expand
 }
 
 def 'files read' []: string -> record<hash: string, extension: string> {
@@ -136,17 +104,16 @@ export def add [
     ...tags: string
     --git (-g)
 ]: nothing -> string {
-    let file_path = ($file | files path)
-    let file_read = ($file_path | files read)
+    let result = ($file | files read)
 
-    let hash = $file_read.hash
-    let extension = $file_read.extension
+    let hash = $result.hash
+    let extension = $result.extension
 
     # cache
     let list = list
     let data = data
 
-    if ($list | get --optional $file_read.hash) != null {
+    if ($list | get --optional $result.hash) != null {
         error make { msg: "file is already listed" }
     }
 
@@ -158,7 +125,7 @@ export def add [
 
     let store_path = (store path $hash $extension)
 
-    cp $file_path $store_path
+    cp $file $store_path
     $list | insert $hash $stored | save --force $data
 
     if ($git) {
