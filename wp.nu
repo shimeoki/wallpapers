@@ -142,7 +142,9 @@ export def add [
     let hash = $file_read.hash
     let extension = $file_read.extension
 
-    let list = list # cache
+    # cache
+    let list = list
+    let data = data
 
     if ($list | get --optional $file_read.hash) != null {
         error make { msg: "file is already listed" }
@@ -157,7 +159,13 @@ export def add [
     let store_path = (store path $hash $extension)
 
     cp $file_path $store_path
-    $list | insert $hash $stored | save --force (data)
+    $list | insert $hash $stored | save --force $data
+
+    if ($git) {
+        git reset HEAD
+        git add $store_path $data
+        git commit -m $"store: add ($hash)"
+    }
 }
 
 export def del [
