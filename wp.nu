@@ -55,7 +55,7 @@ def data []: nothing -> string {
     $data | path expand
 }
 
-def 'files read' []: string -> record<hash: string, extension: string> {
+def read []: string -> record<hash: string, extension: string> {
     let path = $in
 
     if not ($path | path exists) {
@@ -104,7 +104,7 @@ export def add [
     ...tags: string
     --git (-g)
 ]: nothing -> string {
-    let result = ($file | files read)
+    let result = ($file | read)
 
     let hash = $result.hash
     let extension = $result.extension
