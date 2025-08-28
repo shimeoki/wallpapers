@@ -1,8 +1,10 @@
 #!/usr/bin/env nu
 
+const repo = path self '.'
+
 const defaults = {
-    store: (path self '.' | path join 'store')
-    data:  (path self '.' | path join 'store.toml')
+    store: ($repo | path join 'store')
+    data:  ($repo | path join 'store.toml')
 }
 
 const envs = {
@@ -154,6 +156,7 @@ export def 'store add' [
     $list | insert $read.hash $meta | save --force $file
 
     if ($git) {
+        cd $repo
         git reset HEAD
         git add $path $file
         git commit -m $"store: add ($read.hash)"
@@ -180,6 +183,7 @@ export def 'store del' [
     $list | reject $hash | save --force $file
 
     if ($git) {
+        cd $repo
         git reset HEAD
         git add $path $file
         git commit -m $"store: del ($hash)"
