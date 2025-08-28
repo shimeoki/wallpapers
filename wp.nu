@@ -11,7 +11,18 @@ export def list []: nothing -> record {
     open $data
 }
 
-def check []: record -> nothing {
+def check []: record -> record {
+    let record = $in
+
+    if not ($record.file | path exists) {
+        error make { msg: "file doesn't exist" }
+    }
+
+    if ($record.tags | is-empty) {
+        error make { msg: "tags are empty" }
+    }
+
+    $record
 }
 
 export def add [
