@@ -30,7 +30,12 @@ export def add [
     source: string
     ...tags: string
 ]: nothing -> nothing {
-    list | insert $file { source: $source tags: $tags }
+    let record = ({ $file: { source: $source tags: $tags } } | check)
+    let list = list
 
-    return
+    if ($list | get --optional $file) != null {
+        error make { msg: "file is already listed" }
+    }
+
+    $record | to toml | save --append $data
 }
