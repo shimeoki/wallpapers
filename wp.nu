@@ -47,8 +47,12 @@ export def 'store file' []: nothing -> string {
     $data | path expand
 }
 
+export def 'store list' []: nothing -> record {
+    store file | open
+}
+
 export def 'store data' [hash: string]: nothing -> record {
-    list | get --optional $hash
+    store list | get --optional $hash
 }
 
 def 'store path' [hash: string, extension: string]: nothing -> string {
@@ -57,10 +61,6 @@ def 'store path' [hash: string, extension: string]: nothing -> string {
         stem: $hash
         extension: $extension
     } | path join
-}
-
-export def list []: nothing -> record {
-    store file | open
 }
 
 def check [ # returns the same record
@@ -114,7 +114,7 @@ export def 'store add' [
     let extension = $result.extension
 
     # cache
-    let list = list
+    let list = store list
     let data = store file
 
     if ($list | get --optional $result.hash) != null {
@@ -146,7 +146,7 @@ export def 'store del' [
     --git (-g)
 ]: nothing -> string {
     # cache
-    let list = list
+    let list = store list
     let data = store file
 
     let stored = ($list | get --optional $hash)
@@ -173,7 +173,7 @@ export def stored [
     hash: string
     --absolute (-a)
 ]: nothing -> string {
-    let stored = (list | get $hash)
+    let stored = (store list | get $hash)
 
     store path $hash $stored.extension
     | if ($absolute) {
@@ -184,11 +184,11 @@ export def stored [
 }
 
 export def 'tag list' []: nothing -> list<string> {
-    list | values | get tags | flatten | uniq
+    store list | values | get tags | flatten | uniq
 }
 
 export def 'tag rename' [old: string, new: string] {
-    list | transpose hash stored | each {|wp|
+    store list | transpose hash stored | each {|wp|
         let tags = ($wp.stored.tags | each {|tag|
             if ($tag == $old) { $new } else { $tag }
         } | uniq)
@@ -199,7 +199,7 @@ export def 'tag rename' [old: string, new: string] {
 
 export def 'tag filter' []: closure -> list<string> {
     let closure = $in
-    list | items {|hash, stored|
+    store list | items {|hash, stored|
         do $closure $stored.tags
         | if $in { $hash }
     } | compact
