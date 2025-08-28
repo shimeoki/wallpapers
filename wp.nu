@@ -135,7 +135,7 @@ export def add [
     source: string
     ...tags: string
     --git (-g)
-]: nothing -> nothing {
+]: nothing -> string {
     let file_path = ($file | files path)
     let file_read = ($file_path | files read)
 
@@ -165,15 +165,15 @@ export def add [
         git reset HEAD
         git add $store_path $data
         git commit -m $"store: add ($hash)"
-    } else {
-        print $hash
-    }
+    } 
+
+    $hash
 }
 
 export def del [
     hash: string
     --git (-g)
-]: nothing -> nothing {
+]: nothing -> string {
     # cache
     let list = list
     let data = data
@@ -193,9 +193,9 @@ export def del [
         git reset HEAD
         git add $store_path $data
         git commit -m $"store: del ($hash)"
-    } else {
-        print $hash
     }
+
+    $hash
 }
 
 export def 'tag list' []: nothing -> list<string> {
