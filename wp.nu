@@ -12,7 +12,7 @@ const envs = {
 
 const extensions = [ png jpg jpeg ]
 
-def 'store dir' []: nothing -> string {
+export def 'store dir' []: nothing -> string {
     let store = ($env | get --optional $envs.store | default $defaults.store)
 
     if not ($store | path exists) {
@@ -27,7 +27,7 @@ def 'store dir' []: nothing -> string {
     $store | path expand
 }
 
-def 'store file' []: nothing -> string {
+export def 'store file' []: nothing -> string {
     let data = ($env | get --optional $envs.data | default $defaults.data)
 
     if ($data | path parse | get extension) != toml {
