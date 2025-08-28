@@ -8,7 +8,7 @@ export def list []: nothing -> record {
         touch $data
     }
 
-    {}
+    open $data
 }
 
 export def add [
