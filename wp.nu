@@ -1,7 +1,11 @@
 #!/usr/bin/env nu
 
 # fix: don't hardcode default source
-const default_source = '/home/d/Pictures/bg/landscape'
+const defaults = {
+    store:  './store'
+    data:   './store.toml'
+    source: '/home/d/Pictures/bg/landscape' 
+}
 
 const envs = {
     store:  'WP_STORE'
@@ -10,7 +14,7 @@ const envs = {
 }
 
 def store []: nothing -> string {
-    let store = ($env | get --optional $envs.store | default "files")
+    let store = ($env | get --optional $envs.store | default $defaults.store)
 
     if not ($store | path exists) {
         # todo: logging?
@@ -25,7 +29,7 @@ def store []: nothing -> string {
 }
 
 def data []: nothing -> string {
-    let data = ($env | get --optional $envs.data | default "store.toml")
+    let data = ($env | get --optional $envs.data | default $defaults.data)
 
     if ($data | path parse | get extension) != toml {
         error make { msg: $"'($envs.data)' extension should be toml" }
@@ -45,7 +49,7 @@ def data []: nothing -> string {
 }
 
 def source []: nothing -> string {
-    let source = ($env | get --optional $envs.source | default $default_source)
+    let source = ($env | get --optional $envs.source | default $defaults.source)
 
     if not ($source | path exists) {
         error make { msg: $"'($envs.source)' doesn't exist" }
