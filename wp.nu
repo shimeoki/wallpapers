@@ -11,6 +11,9 @@ export def list []: nothing -> record {
     open $data
 }
 
+def check []: record -> nothing {
+}
+
 export def add [
     file: string
     source: string
