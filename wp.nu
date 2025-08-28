@@ -3,6 +3,10 @@
 const files = ("files" | path expand)
 const data = ("data.toml" | path expand)
 
+export def list []: nothing -> table {
+    []
+}
+
 export def add [
     file: string
     source: string
