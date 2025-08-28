@@ -15,14 +15,24 @@ def files []: nothing -> string {
     ($files | path expand)
 }
 
-const data = ("data.toml" | path expand)
+def data []: nothing -> string {
+    let data = ($env | get --optional WP_DATA | default "data.toml")
 
-export def list []: nothing -> record {
     if not ($data | path exists) {
+        # todo: logging?
         touch $data
     }
 
-    open $data
+    # todo: handle symlinks?
+    if ($data | path type) != file {
+        error make { msg: "'WP_DATA' is not a file" }
+    }
+
+    ($data | path expand)
+}
+
+export def list []: nothing -> record {
+    data | open
 }
 
 def check []: record -> record {
@@ -51,5 +61,5 @@ export def add [
         error make { msg: "file is already listed" }
     }
 
-    $record | to toml | save --append $data
+    $record | to toml | save --append (data)
 }
