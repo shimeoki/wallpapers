@@ -69,7 +69,7 @@ def 'files path' []: string -> string {
     let prefix = ($path | str substring ..0)
 
     # todo: windows paths?
-    if ($prefix == '.') or ($prefix == '/') {
+    if ($path | path exists) and (($prefix == '.') or ($prefix == '/')) {
         $path
     } else {
         $path | path join (files)
