@@ -13,6 +13,8 @@ const envs = {
     files: 'WP_FILES'
 }
 
+const extensions = [ png jpg jpeg ]
+
 def store []: nothing -> string {
     let store = ($env | get --optional $envs.store | default $defaults.store)
 
@@ -72,6 +74,28 @@ def 'files path' []: string -> string {
     } else {
         $path | path join (files)
     } | path expand
+}
+
+def 'files read' []: string -> record<hash: string, extension: string> {
+    let path = $in
+
+    if not ($path | path exists) {
+        error make { msg: $"'($path)' doesn't exist" }
+    }
+
+    # todo: handle symlinks?
+    if ($path | path type) != file {
+        error make { msg: $"'($path)' is not a file" }
+    }
+
+    let extension = ($path | path parse | get extension)
+    if $extension not-in $extensions {
+        error make { msg: $"'($path)' extension is not one of '($extensions)'" }
+    }
+
+    let hash = (open $path | hash sha256)
+
+    { hash: $hash, extension: $extension }
 }
 
 export def list []: nothing -> record {
