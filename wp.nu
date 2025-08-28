@@ -12,50 +12,8 @@ const envs = {
 
 const extensions = [ png jpg jpeg ]
 
-export def 'store dir' []: nothing -> string {
-    let store = ($env | get --optional $envs.store | default $defaults.store)
-
-    if not ($store | path exists) {
-        # todo: logging?
-        mkdir $store
-    }
-
-    if ($store | path type) != dir {
-        error make { msg: $"'($envs.store)' is not a directory" }
-    }
-
-    $store | path expand
-}
-
-export def 'store file' []: nothing -> string {
-    let data = ($env | get --optional $envs.data | default $defaults.data)
-
-    if ($data | path parse | get extension) != toml {
-        error make { msg: $"'($envs.data)' extension should be toml" }
-    }
-
-    if not ($data | path exists) {
-        # todo: logging?
-        touch $data
-    }
-
-    # todo: handle symlinks?
-    if ($data | path type) != file {
-        error make { msg: $"'($envs.data)' is not a file" }
-    }
-
-    $data | path expand
-}
-
-export def 'store list' []: nothing -> record {
-    store file | open
-}
-
-export def 'store data' [hash: string]: nothing -> record {
-    store list | get --optional $hash
-}
-
-def 'store path' [hash: string, extension: string]: nothing -> string {
+# unexported helper
+def store-path [hash: string, extension: string]: nothing -> string {
     {
         parent: (store dir)
         stem: $hash
@@ -102,6 +60,67 @@ def read []: string -> record<hash: string, extension: string> {
     { hash: $hash, extension: $extension }
 }
 
+export def 'store dir' []: nothing -> string {
+    let store = ($env | get --optional $envs.store | default $defaults.store)
+
+    if not ($store | path exists) {
+        # todo: logging?
+        mkdir $store
+    }
+
+    if ($store | path type) != dir {
+        error make { msg: $"'($envs.store)' is not a directory" }
+    }
+
+    $store | path expand
+}
+
+export def 'store file' []: nothing -> string {
+    let data = ($env | get --optional $envs.data | default $defaults.data)
+
+    if ($data | path parse | get extension) != toml {
+        error make { msg: $"'($envs.data)' extension should be toml" }
+    }
+
+    if not ($data | path exists) {
+        # todo: logging?
+        touch $data
+    }
+
+    # todo: handle symlinks?
+    if ($data | path type) != file {
+        error make { msg: $"'($envs.data)' is not a file" }
+    }
+
+    $data | path expand
+}
+
+export def 'store list' []: nothing -> record {
+    store file | open
+}
+
+export def 'store data' [hash: string]: nothing -> record {
+    store list | get --optional $hash
+}
+
+export def 'store path' [
+    hash: string
+    --absolute (-a)
+]: nothing -> string {
+    let data = (store data $hash)
+    if ($data == null) {
+        error make { msg: $"'($hash)' is not stored" }
+    }
+
+    let path = store-path $hash $data.extension
+
+    if $absolute {
+        $path | path expand
+    } else {
+        $path | path relative-to $env.PWD
+    }
+}
+
 export def 'store add' [
     file: string
     source: string
@@ -127,7 +146,7 @@ export def 'store add' [
         tags: ($tags | uniq)
     } | check)
 
-    let store_path = (store path $hash $extension)
+    let store_path = store-path $hash $extension
 
     cp $file $store_path
     $list | insert $hash $stored | save --force $data
@@ -155,7 +174,7 @@ export def 'store del' [
         error make { msg: "file is not listed" }
     }
 
-    let store_path = (store path $hash $stored.extension)
+    let store_path = store-path $hash $stored.extension
 
     rm $store_path
     $list | reject $hash | save --force $data
@@ -167,20 +186,6 @@ export def 'store del' [
     }
 
     $hash
-}
-
-export def stored [
-    hash: string
-    --absolute (-a)
-]: nothing -> string {
-    let stored = (store list | get $hash)
-
-    store path $hash $stored.extension
-    | if ($absolute) {
-        $in | path expand
-    } else {
-        $in | path relative-to $env.PWD
-    }
 }
 
 export def 'tag list' []: nothing -> list<string> {
