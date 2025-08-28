@@ -198,6 +198,20 @@ export def del [
     $hash
 }
 
+export def stored [
+    hash: string
+    --absolute (-a)
+]: nothing -> string {
+    let stored = (list | get $hash)
+
+    store path $hash $stored.extension
+    | if ($absolute) {
+        $in | path expand
+    } else {
+        $in | path relative-to $env.PWD
+    }
+}
+
 export def 'tag list' []: nothing -> list<string> {
     list | values | get tags | flatten | uniq
 }
