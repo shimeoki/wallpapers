@@ -6,8 +6,8 @@ const defaults = {
 }
 
 const envs = {
-    store: 'WP_STORE'
-    data:  'WP_DATA'
+    store: 'WP_STORE_DIR'
+    data:  'WP_STORE_FILE'
 }
 
 const extensions = [ png jpg jpeg ]
