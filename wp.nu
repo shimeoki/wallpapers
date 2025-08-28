@@ -3,12 +3,12 @@
 const files = ("files" | path expand)
 const data = ("data.toml" | path expand)
 
-export def list []: nothing -> table {
+export def list []: nothing -> record {
     if not ($data | path exists) {
         touch $data
     }
 
-    []
+    {}
 }
 
 export def add [
