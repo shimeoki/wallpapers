@@ -8,5 +8,5 @@ export def add [
     source: string
     ...tags: string
 ]: nothing -> nothing {
-
+    let record = { $file: { source: $source tags: $tags } }
 }
