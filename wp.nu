@@ -10,7 +10,7 @@ const defaults = {
 const envs = {
     store: 'WP_STORE'
     data:  'WP_DATA'
-    files: 'WP_SOURCE'
+    files: 'WP_FILES'
 }
 
 def store []: nothing -> string {
