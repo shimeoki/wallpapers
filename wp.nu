@@ -12,7 +12,7 @@ const envs = {
 
 const extensions = [ png jpg jpeg ]
 
-def store []: nothing -> string {
+def 'store dir' []: nothing -> string {
     let store = ($env | get --optional $envs.store | default $defaults.store)
 
     if not ($store | path exists) {
@@ -29,7 +29,7 @@ def store []: nothing -> string {
 
 def 'store path' [hash: string, extension: string]: nothing -> string {
     {
-        parent: (store)
+        parent: (store dir)
         stem: $hash
         extension: $extension
     } | path join
