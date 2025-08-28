@@ -1,5 +1,8 @@
 #!/usr/bin/env nu
 
+# fix: don't hardcode default source
+const default_source = '/home/d/Pictures/bg/landscape'
+
 def files []: nothing -> string {
     let files = ($env | get --optional WP_FILES | default "files")
 
@@ -33,6 +36,20 @@ def data []: nothing -> string {
     }
 
     ($data | path expand)
+}
+
+def source []: nothing -> string {
+    let source = ($env | get --optional WP_SOURCE | default $default_source)
+
+    if not ($source | path exists) {
+        error make { msg: "'WP_SOURCE' doesn't exist" }
+    }
+
+    if ($source | path type) != dir {
+        error make { msg: "'WP_SOURCE' is not a directory" }
+    }
+
+    ($source | path expand)
 }
 
 export def list []: nothing -> record {
