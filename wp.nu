@@ -35,7 +35,7 @@ def 'store path' [hash: string, extension: string]: nothing -> string {
     } | path join
 }
 
-def data []: nothing -> string {
+def 'store file' []: nothing -> string {
     let data = ($env | get --optional $envs.data | default $defaults.data)
 
     if ($data | path parse | get extension) != toml {
@@ -78,7 +78,7 @@ def read []: string -> record<hash: string, extension: string> {
 }
 
 export def list []: nothing -> record {
-    data | open
+    store file | open
 }
 
 def check [ # returns the same record
@@ -111,7 +111,7 @@ export def add [
 
     # cache
     let list = list
-    let data = data
+    let data = store file
 
     if ($list | get --optional $result.hash) != null {
         error make { msg: "file is already listed" }
@@ -143,7 +143,7 @@ export def del [
 ]: nothing -> string {
     # cache
     let list = list
-    let data = data
+    let data = store file
 
     let stored = ($list | get --optional $hash)
 
@@ -190,7 +190,7 @@ export def 'tag rename' [old: string, new: string] {
         } | uniq)
 
         { hash: $wp.hash, stored: ($wp.stored | update tags $tags) }
-    } | transpose --as-record --header-row --ignore-titles | save --force (data)
+    } | transpose --as-record --header-row --ignore-titles | save --force (store file)
 }
 
 export def 'tag filter' []: closure -> list<string> {
