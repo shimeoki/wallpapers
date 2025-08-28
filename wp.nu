@@ -138,7 +138,9 @@ export def add [
     let file_path = ($file | files path)
     let file_read = ($file_path | files read)
 
-    if (list | get --optional $file_read.hash) != null {
+    let list = list # cache
+
+    if ($list | get --optional $file_read.hash) != null {
         error make { msg: "file is already listed" }
     }
 
@@ -151,6 +153,5 @@ export def add [
     let store_path = (store path $file_read.hash $file_read.extension)
 
     cp $file_path $store_path
-
-    { $file_read.hash: $record } | to toml | save --append (data)
+    $list | insert $file_read.hash $record | save --force (data)
 }
