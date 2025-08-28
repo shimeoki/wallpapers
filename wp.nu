@@ -1,6 +1,20 @@
 #!/usr/bin/env nu
 
-const files = ("files" | path expand)
+def files []: nothing -> string {
+    let files = ($env | get --optional WP_FILES | default "files")
+
+    if not ($files | path exists) {
+        # todo: logging?
+        mkdir $files
+    }
+
+    if ($files | path type) != dir {
+        error make { msg: "'WP_FILES' is not a directory" }
+    }
+
+    ($files | path expand)
+}
+
 const data = ("data.toml" | path expand)
 
 export def list []: nothing -> record {
