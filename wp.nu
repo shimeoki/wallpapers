@@ -12,13 +12,24 @@ const envs = {
 
 const extensions = [ png jpg jpeg ]
 
-# unexported helper
 def store-path [hash: string, extension: string]: nothing -> string {
     {
         parent: (store dir)
         stem: $hash
         extension: $extension
     } | path join
+}
+
+def store-meta [
+    extension: string
+    source: string
+    tags: list<string>
+]: nothing -> record<extension: string, source: string, tags: list<string>> {
+    {
+        extension: $extension
+        source: $source
+        tags: ($tags | uniq)
+    } | check
 }
 
 def check [ # returns the same record
@@ -122,70 +133,57 @@ export def 'store path' [
 }
 
 export def 'store add' [
-    file: string
+    filepath: string
     source: string
     ...tags: string
     --git (-g)
 ]: nothing -> string {
-    let result = ($file | read)
+    let read = ($filepath | read)
 
-    let hash = $result.hash
-    let extension = $result.extension
-
-    # cache
     let list = store list
-    let data = store file
+    let file = store file
 
-    if ($list | get --optional $result.hash) != null {
-        error make { msg: "file is already listed" }
+    if ($list | get --optional $read.hash) != null {
+        error make { msg: $"'($read.hash)' is in the store" }
     }
 
-    let stored = ({
-        extension: $extension
-        source: $source
-        tags: ($tags | uniq)
-    } | check)
+    let meta = store-meta $read.extension $source $tags
+    let path = store-path $read.hash $read.extension
 
-    let store_path = store-path $hash $extension
-
-    cp $file $store_path
-    $list | insert $hash $stored | save --force $data
+    cp $filepath $path
+    $list | insert $read.hash $meta | save --force $file
 
     if ($git) {
         git reset HEAD
-        git add $store_path $data
-        git commit -m $"store: add ($hash)"
+        git add $path $file
+        git commit -m $"store: add ($read.hash)"
     } 
 
-    $hash
+    $read.hash
 }
 
 export def 'store del' [
     hash: string
     --git (-g)
-]: nothing -> string {
-    # cache
+]: nothing -> nothing {
     let list = store list
-    let data = store file
+    let file = store file
 
-    let stored = ($list | get --optional $hash)
-
-    if $stored == null {
+    let meta = ($list | get --optional $hash)
+    if $meta == null {
         error make { msg: "file is not listed" }
     }
 
-    let store_path = store-path $hash $stored.extension
+    let path = store-path $hash $meta.extension
 
-    rm $store_path
-    $list | reject $hash | save --force $data
+    rm --force $path
+    $list | reject $hash | save --force $file
 
     if ($git) {
         git reset HEAD
-        git add $store_path $data
+        git add $path $file
         git commit -m $"store: del ($hash)"
     }
-
-    $hash
 }
 
 export def 'tag list' []: nothing -> list<string> {
