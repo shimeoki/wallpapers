@@ -98,7 +98,7 @@ def read []: string -> record<hash: string, extension: string> {
     { hash: $hash, extension: $extension }
 }
 
-export def add [
+export def 'store add' [
     file: string
     source: string
     ...tags: string
@@ -137,7 +137,7 @@ export def add [
     $hash
 }
 
-export def del [
+export def 'store del' [
     hash: string
     --git (-g)
 ]: nothing -> string {
