@@ -27,14 +27,6 @@ def 'store dir' []: nothing -> string {
     $store | path expand
 }
 
-def 'store path' [hash: string, extension: string]: nothing -> string {
-    {
-        parent: (store dir)
-        stem: $hash
-        extension: $extension
-    } | path join
-}
-
 def 'store file' []: nothing -> string {
     let data = ($env | get --optional $envs.data | default $defaults.data)
 
@@ -53,6 +45,35 @@ def 'store file' []: nothing -> string {
     }
 
     $data | path expand
+}
+
+def 'store path' [hash: string, extension: string]: nothing -> string {
+    {
+        parent: (store dir)
+        stem: $hash
+        extension: $extension
+    } | path join
+}
+
+export def list []: nothing -> record {
+    store file | open
+}
+
+def check [ # returns the same record
+]: record<extension: string, source: string, tags: list<string>> -> record {
+    let record = $in
+
+    if ($record.extension not-in $extensions) {
+        error make { msg: "unsupported extension" }
+    }
+
+    # no source check
+
+    if ($record.tags | is-empty) {
+        error make { msg: "tags are empty" }
+    }
+
+    $record
 }
 
 def read []: string -> record<hash: string, extension: string> {
@@ -75,27 +96,6 @@ def read []: string -> record<hash: string, extension: string> {
     let hash = (open $path | hash sha256)
 
     { hash: $hash, extension: $extension }
-}
-
-export def list []: nothing -> record {
-    store file | open
-}
-
-def check [ # returns the same record
-]: record<extension: string, source: string, tags: list<string>> -> record {
-    let record = $in
-
-    if ($record.extension not-in $extensions) {
-        error make { msg: "unsupported extension" }
-    }
-
-    # no source check
-
-    if ($record.tags | is-empty) {
-        error make { msg: "tags are empty" }
-    }
-
-    $record
 }
 
 export def add [
