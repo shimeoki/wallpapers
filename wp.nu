@@ -18,6 +18,10 @@ def files []: nothing -> string {
 def data []: nothing -> string {
     let data = ($env | get --optional WP_DATA | default "data.toml")
 
+    if ($data | path parse | get extension) != toml {
+        error make { msg: "'WP_DATA' extension should be toml" }
+    }
+
     if not ($data | path exists) {
         # todo: logging?
         touch $data
