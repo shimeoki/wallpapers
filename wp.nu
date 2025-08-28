@@ -2,15 +2,15 @@
 
 # fix: don't hardcode default source
 const defaults = {
-    store:  './store'
-    data:   './store.toml'
-    source: '/home/d/Pictures/bg/landscape' 
+    store: './store'
+    data:  './store.toml'
+    files: '/home/d/Pictures/bg/landscape'
 }
 
 const envs = {
-    store:  'WP_STORE'
-    data:   'WP_DATA'
-    source: 'WP_SOURCE'
+    store: 'WP_STORE'
+    data:  'WP_DATA'
+    files: 'WP_SOURCE'
 }
 
 def store []: nothing -> string {
@@ -48,21 +48,21 @@ def data []: nothing -> string {
     ($data | path expand)
 }
 
-def source []: nothing -> string {
-    let source = ($env | get --optional $envs.source | default $defaults.source)
+def files []: nothing -> string {
+    let files = ($env | get --optional $envs.files | default $defaults.files)
 
-    if not ($source | path exists) {
-        error make { msg: $"'($envs.source)' doesn't exist" }
+    if not ($files | path exists) {
+        error make { msg: $"'($envs.files)' doesn't exist" }
     }
 
-    if ($source | path type) != dir {
-        error make { msg: $"'($envs.source)' is not a directory" }
+    if ($files | path type) != dir {
+        error make { msg: $"'($envs.files)' is not a directory" }
     }
 
-    ($source | path expand)
+    ($files | path expand)
 }
 
-def 'source path' []: string -> string {
+def 'files path' []: string -> string {
     let path = $in
     let prefix = ($path | str substring ..0)
 
@@ -70,7 +70,7 @@ def 'source path' []: string -> string {
     if ($prefix == '.') or ($prefix == '/') {
         $path
     } else {
-        $path | path join (source)
+        $path | path join (files)
     } | path expand
 }
 
