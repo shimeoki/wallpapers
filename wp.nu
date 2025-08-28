@@ -30,6 +30,14 @@ def store []: nothing -> string {
     $store | path expand
 }
 
+def 'store path' [hash: string, extension: string]: nothing -> string {
+    {
+        parent: (store)
+        stem: $hash
+        extension: $extension
+    } | path join
+}
+
 def data []: nothing -> string {
     let data = ($env | get --optional $envs.data | default $defaults.data)
 
@@ -140,11 +148,7 @@ export def add [
         tags: $tags
     } | check)
 
-    let store_path = ({
-        parent: (store)
-        stem: $file_read.hash
-        extension: $file_read.extension
-    } | path join)
+    let store_path = (store path $file_read.hash $file_read.extension)
 
     cp $file_path $store_path
 
