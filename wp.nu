@@ -158,3 +158,20 @@ export def add [
     cp $file_path $store_path
     $list | insert $hash $stored | save --force (data)
 }
+
+export def del [
+    hash: string
+]: nothing -> nothing {
+    let list = list # cache
+
+    let stored = ($list | get --optional $hash)
+
+    if $stored == null {
+        error make { msg: "file is not listed" }
+    }
+
+    let store_path = (store path $hash $stored.extension)
+
+    rm $store_path
+    $list | reject $hash | save --force (data)
+}
