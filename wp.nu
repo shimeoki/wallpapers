@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
 const defaults = {
-    store: (path self '.' | path join 'store' | path expand)
-    data:  (path self '.' | path join 'store.toml' | path expand)
+    store: (path self '.' | path join 'store')
+    data:  (path self '.' | path join 'store.toml')
 }
 
 const envs = {
