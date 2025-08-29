@@ -117,21 +117,26 @@ export def 'store data' [hash: string]: nothing -> record {
 }
 
 export def 'store path' [
-    hash: string
     --absolute (-a)
-]: nothing -> string {
-    let data = (store data $hash)
-    if ($data == null) {
-        error make { msg: $"'($hash)' is not stored" }
-    }
+]: [
+    string -> list<string>
+    list<string> -> list<string>
+] {
+    let hashes = ($in | append [])
+    let list = store list
+    let dir = store dir
 
-    let path = store-path $hash $data.extension
-
-    if $absolute {
-        $path | path expand
-    } else {
-        $path | path relative-to $env.PWD
+    $hashes | each {|hash|
+        $list
+        | get --optional $hash
+        | if $in != null {
+           { parent: $dir, stem: $hash, extension: $in.extension } | path join
+        } else {
+            $in
+        }
     }
+    | compact
+    | if not $absolute { $in | path relative-to $env.PWD } else { $in }
 }
 
 export def 'store add' [
