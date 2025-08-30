@@ -216,4 +216,14 @@ export def 'pick any' [
     | store path --absolute=$absolute
 }
 
+export def 'pick all' [
+    ...tags: string
+    --absolute (-a)
+]: nothing -> list<string> {
+    let dst = ($tags | flatten | uniq)
+    {|src| $src | all {|tag| $tag in $dst } }
+    | tag filter
+    | store path --absolute=$absolute
+}
+
 export alias add = store add
