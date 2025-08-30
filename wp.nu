@@ -240,4 +240,19 @@ export def 'pick all' [
     | store path --absolute=$absolute
 }
 
+export def --wrapped 'pick fzf' [
+    ...args: string
+    --absolute (-a)
+]: nothing -> list<string> {
+    let dir = store dir
+
+    store list | transpose hash meta | each {|wp|
+        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
+        ($p | path join | append $wp.meta.tags)
+    } | each {|lst| $lst | str join ' ' } | to text
+    | ^fzf --accept-nth='1' --with-nth='2..' ...$args
+    | lines
+    | if not $absolute { $in | path relative-to $env.PWD } else { $in }
+}
+
 export alias add = store add
