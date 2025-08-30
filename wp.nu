@@ -110,6 +110,61 @@ export def 'store path' [
     | if not $absolute { $in | path relative-to $env.PWD } else { $in }
 }
 
+def from-hash [list: record]: list<string> -> list<record> {
+    each {|hash|
+        let wp = ($list | get --optional $hash)
+        if $wp != null { { hash: $hash, meta: $wp } } else { null }
+    } | compact
+}
+
+def with-path [dir: string]: list<record> -> list<record> {
+    each {|wp|
+        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
+        $wp | insert path ($p | path join | path expand)
+    }
+}
+
+def show [image: bool]: record -> nothing {
+    let wp = $in
+    let source = ($wp | get source --optional)
+
+    if $image { kitten icat --stdin=no $wp.path }
+
+    print $"hash: ($wp.hash)" $"tags: ($wp.meta.tags)"
+
+    if ($source == null) {
+        print "no source provided" ''
+    } else {
+        print $"source: ($source)" ''
+    }
+}
+
+def add-source [source]: record -> record {
+    let wp = $in
+    if ($source | is-empty) { $wp } else { $wp | upsert meta.source $source }
+}
+
+def add-tags [tags: list<string>]: record -> record {
+    let wp = $in
+    let tags = ($tags | flatten | compact --empty | uniq)
+    if ($tags | is-empty) { $wp } else { $wp | upsert meta.tags $tags }
+}
+
+def store-git [action: string]: record -> nothing {
+    let wp = $in
+    let hash = ($wp.hash | str substring ..31)
+    let store = store file
+
+    cd $repo
+
+    git reset HEAD | complete
+    git add $store | complete
+    git add $wp.path | complete
+    git commit -m $'store: ($action) ($hash)' | complete
+
+    ignore
+}
+
 export def 'store edit' [
     ...tags: string
     --source (-s): string
@@ -121,87 +176,30 @@ export def 'store edit' [
 ] {
     let hashes = ($in | append [])
 
-    let tags = ($tags | flatten | uniq)
-    if ($tags | is-empty) and not $interactive {
-        error make { msg: 'tags are empty' }
-    }
-
     let list = store list
     let file = store file
     let dir = store dir
-    cd $repo
 
-    $hashes | each {|hash|
-        let wp = ($list | get --optional $hash)
-        if $wp != null { { hash: $hash, meta: $wp } } else { null }
-    } | compact | each {|wp|
-        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
-        $wp | insert path ($p | path join | path expand)
-    } | each {|wp|
-        let stored_source = ($wp.meta | get source --optional)
+    $hashes | from-hash $list | with-path $dir | each {|wp|
+        if $interactive { print 'next:'; $wp | show true }
 
-        if $interactive {
-            kitten icat --stdin=no $wp.path
-
-            print $"hash: ($wp.hash)" $"tags: ($wp.meta.tags)"
-
-            if ($stored_source | is-empty) {
-                print "no source provided" ''
-            } else {
-                print $"source: ($stored_source)" ''
-            }
-        }
-
-        let user_tags = (if $interactive {
-            input 'specify tags: ' | split row ' ' | compact --empty
+        let new_tags = (if $interactive {
+            input 'specify tags: ' | split row ' '
         } else {
             []
         } | append $tags)
 
-        let new_tags = if ($user_tags | is-empty) {
-            $wp.meta.tags
-        } else {
-            $user_tags
-        }
-
-        if $interactive {
-            print $"new tags: ($new_tags)" ''
-        }
-
-        let user_source = if $interactive and ($source != null) {
+        let new_source = if $interactive and ($source != null) {
             input 'specify source: '
         } else {
             $source
         }
 
-        let new_source = if ($user_source | is-empty) {
-            $stored_source
-        } else {
-            $user_source
-        }
-
-        if $interactive and ($source != null) {
-            print $"new source: ($new_source)" ''
-        }
-
-        let new_meta = if ($new_source | is-empty) { {
-            extension: $wp.meta.extension
-            tags: $new_tags
-        } } else { {
-            extension: $wp.meta.extension
-            source: $new_source
-            tags: $new_tags
-        } }
-
-        { hash: $wp.hash, meta: $new_meta }
+        $wp | add-tags $new_tags | add-source $new_source
     } | compact | each {|wp|
         store list | upsert $wp.hash $wp.meta | save --force $file
-
-        if $git {
-            git reset HEAD | ignore
-            git add $file | ignore
-            git commit -m $"store: edit ($wp.hash | str substring ..31)" | ignore
-        }
+        if $git { $wp | store-git 'edit' }
+        if $interactive { print '' 'applied:'; $wp | show false }
     }
 }
 
