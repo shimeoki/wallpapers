@@ -216,14 +216,16 @@ export def 'tag list' []: nothing -> list<string> {
     store list | values | get tags | flatten | uniq
 }
 
-export def 'tag rename' [old: string, new: string] {
-    store list | transpose hash stored | each {|wp|
-        let tags = ($wp.stored.tags | each {|tag|
+export def 'tag rename' [old: string, new: string]: nothing -> nothing {
+    store list | transpose hash meta | each {|wp|
+        let tags = ($wp.meta.tags | each {|tag|
             if ($tag == $old) { $new } else { $tag }
         } | uniq)
 
-        { hash: $wp.hash, stored: ($wp.stored | update tags $tags) }
-    } | transpose --as-record --header-row --ignore-titles | save --force (store file)
+        { hash: $wp.hash, meta: ($wp.meta | update tags $tags) }
+    }
+    | transpose --as-record --header-row --ignore-titles
+    | save --force (store file)
 }
 
 export def 'tag filter' []: closure -> list<string> {
