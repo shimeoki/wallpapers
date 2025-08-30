@@ -206,4 +206,14 @@ export def 'tag filter' []: closure -> list<string> {
     } | compact
 }
 
+export def 'pick any' [
+    ...tags: string
+    --absolute (-a)
+]: nothing -> list<string> {
+    let dst = ($tags | flatten | uniq)
+    {|src| $src | any {|tag| $tag in $dst } }
+    | tag filter
+    | store path --absolute=$absolute
+}
+
 export alias add = store add
