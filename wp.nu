@@ -22,35 +22,6 @@ def store-path [hash: string, extension: string]: nothing -> string {
     } | path join
 }
 
-def store-meta [
-    extension: string
-    source: string
-    tags: list<string>
-]: nothing -> record<extension: string, source: string, tags: list<string>> {
-    {
-        extension: $extension
-        source: $source
-        tags: ($tags | uniq)
-    } | check
-}
-
-def check [ # returns the same record
-]: record<extension: string, source: string, tags: list<string>> -> record {
-    let record = $in
-
-    if ($record.extension not-in $extensions) {
-        error make { msg: "unsupported extension" }
-    }
-
-    # no source check
-
-    if ($record.tags | is-empty) {
-        error make { msg: "tags are empty" }
-    }
-
-    $record
-}
-
 def read []: string -> record<hash: string, extension: string> {
     let path = $in
 
@@ -158,7 +129,6 @@ export def 'store add' [
 
     $paths | each {|path|
         let read = ($path | read)
-        if ($read.extension not-in $extensions) { return null }
 
         let meta = if $source == null { {
             extension: $read.extension
