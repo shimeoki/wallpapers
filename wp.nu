@@ -98,12 +98,12 @@ export def 'store path' [
     let dir = store dir
 
     $hashes | each {|hash|
-        $list
-        | get --optional $hash
-        | if $in != null {
-           { parent: $dir, stem: $hash, extension: $in.extension } | path join
+        let wp = ($list | get --optional $hash)
+
+        if $wp != null {
+           { parent: $dir, stem: $hash, extension: $wp.extension } | path join
         } else {
-            $in
+            null
         }
     }
     | compact
