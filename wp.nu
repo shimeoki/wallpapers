@@ -124,18 +124,21 @@ def with-path [dir: string]: list<record> -> list<record> {
     }
 }
 
-def show [image: bool]: record -> nothing {
+def show [header: string, image: bool]: record -> nothing {
     let wp = $in
     let source = ($wp | get source --optional)
 
+    print $"(ansi bb)\n($header):(ansi rst)"
+
     if $image { kitten icat --stdin=no $wp.path }
 
-    print $"hash: ($wp.hash)" $"tags: ($wp.meta.tags)"
+    print $'hash: (ansi y)($wp.hash)(ansi rst)'
+    print $'tags: (ansi c)($wp.meta.tags)(ansi rst)'
 
     if ($source == null) {
-        print "no source provided" ''
+        print $'(ansi dgr)no source provided(ansi rst)' ''
     } else {
-        print $"source: ($source)" ''
+        print $'source: (ansi b)($source)(ansi rst)' ''
     }
 }
 
@@ -181,16 +184,16 @@ export def 'store edit' [
     let dir = store dir
 
     $hashes | from-hash $list | with-path $dir | each {|wp|
-        if $interactive { print 'next:'; $wp | show true }
+        if $interactive { $wp | show 'next' true }
 
         let new_tags = (if $interactive {
-            input 'specify tags: ' | split row ' '
+            input $'(ansi g)specify tags:(ansi rst) ' | split row ' '
         } else {
             []
         } | append $tags)
 
         let new_source = if $interactive and ($source != null) {
-            input 'specify source: '
+            input $'(ansi g)specify source:(ansi rst) '
         } else {
             $source
         }
@@ -199,7 +202,7 @@ export def 'store edit' [
     } | compact | each {|wp|
         store list | upsert $wp.hash $wp.meta | save --force $file
         if $git { $wp | store-git 'edit' }
-        if $interactive { print '' 'applied:'; $wp | show false }
+        if $interactive { $wp | show 'applied' false }
     }
 }
 
