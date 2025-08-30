@@ -240,6 +240,12 @@ export def 'pick all' [
     | store path --absolute=$absolute
 }
 
+export def 'pick random' [
+    --absolute (-a)
+]: nothing -> list<string> {
+    store list | columns | shuffle | store path --absolute=$absolute
+}
+
 export def --wrapped 'pick fzf' [
     ...args: string
     --absolute (-a)
