@@ -140,34 +140,51 @@ export def 'store path' [
 }
 
 export def 'store add' [
-    filepath: string
-    source: string
     ...tags: string
+    --source (-s): string
     --git (-g)
-]: nothing -> string {
-    let read = ($filepath | read)
+]: [
+    string -> list<string>
+    list<string> -> list<string>
+] {
+    let paths = ($in | append [] | path expand)
+    cd $repo
 
-    let list = store list
+    let tags = ($tags | flatten | uniq)
+    if ($tags | is-empty) { error make { msg: "tags are empty" } }
+
     let file = store file
+    let dir = store dir
 
-    if ($list | get --optional $read.hash) != null {
-        error make { msg: $"'($read.hash)' is in the store" }
+    $paths | each {|path|
+        let read = ($path | read)
+        if ($read.extension not-in $extensions) { return null }
+
+        let meta = if $source == null { {
+            extension: $read.extension
+            tags: $tags
+        } } else { {
+            extension: $read.extension
+            source: $source
+            tags: $tags
+        } }
+
+        { src: $path, hash: $read.hash, meta: $meta }
+    } | compact | each {|wp|
+        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
+        $wp | insert dst ($p | path join | path expand)
+    } | each {|wp|
+        cp --no-clobber $wp.src $wp.dst
+        store list | upsert $wp.hash $wp.meta | save --force $file
+
+        if $git {
+            git reset HEAD | ignore
+            git add $file $wp.dst | ignore
+            git commit -m $"store: add ($wp.hash | str substring ..31)" | ignore
+        }
+
+        $wp.hash
     }
-
-    let meta = store-meta $read.extension $source $tags
-    let path = store-path $read.hash $read.extension
-
-    cp $filepath $path
-    $list | insert $read.hash $meta | save --force $file
-
-    if ($git) {
-        cd $repo
-        git reset HEAD
-        git add $path $file
-        git commit -m $"store: add ($read.hash)"
-    } 
-
-    $read.hash
 }
 
 export def 'store del' [
