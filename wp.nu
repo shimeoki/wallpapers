@@ -209,8 +209,15 @@ export def 'tag filter' []: closure -> list<string> {
 export def 'pick any' [
     ...tags: string
     --absolute (-a)
+    --interactive (-i)
 ]: nothing -> list<string> {
-    let dst = ($tags | flatten | uniq)
+    let dst = if $interactive {
+        let selected = (tag list | input list --multi 'select the tags')
+        ($tags | append $selected | flatten | uniq)
+    } else {
+        ($tags | flatten | uniq)
+    }
+
     {|src| $src | any {|tag| $tag in $dst } }
     | tag filter
     | store path --absolute=$absolute
@@ -219,8 +226,15 @@ export def 'pick any' [
 export def 'pick all' [
     ...tags: string
     --absolute (-a)
+    --interactive (-i)
 ]: nothing -> list<string> {
-    let dst = ($tags | flatten | uniq)
+    let dst = if $interactive {
+        let selected = (tag list | input list --multi 'select the tags')
+        ($tags | append $selected | flatten | uniq)
+    } else {
+        ($tags | flatten | uniq)
+    }
+
     {|src| $src | all {|tag| $tag in $dst } }
     | tag filter
     | store path --absolute=$absolute
