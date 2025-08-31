@@ -50,6 +50,13 @@
 # repositories, "source" exists. It is just a string. Most of the commands don't
 # care about the source field, and work with it via an explicit argument.
 #
+# It is a Nushell module, so it works cross-platform on a basic level. But
+# some additional dependencies are required to use the following:
+#
+# - Git integration: git;
+# - Interactive commands (`--interactive` flag): kitty terminal emulator;
+# - `pick fzf`: fzf;
+#
 # Source: https://github.com/shimeoki/wallpapers. MIT license.
 
 const repo = path self '.'
