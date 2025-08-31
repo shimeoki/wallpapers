@@ -18,17 +18,17 @@ def read []: string -> record {
     let src = ($in | path expand)
 
     if not ($src | path exists) {
-        error make { msg: $"'($src)' doesn't exist" }
+        err $"'($src)' doesn't exist"
     }
 
     # todo: handle symlinks?
     if ($src | path type) != file {
-        error make { msg: $"'($src)' is not a file" }
+        err $"'($src)' is not a file"
     }
 
     let extension = ($src | path parse | get extension)
     if $extension not-in $extensions {
-        error make { msg: $"'($src)' extension is not one of '($extensions)'" }
+        err $"'($src)' extension is not one of '($extensions)'"
     }
 
     let hash = (open $src | hash sha256)
@@ -42,6 +42,10 @@ def read []: string -> record {
     }
 }
 
+def err [msg: string]: nothing -> error {
+    error make { msg: $'(ansi rb)($msg)(ansi rst)' }
+}
+
 export def 'store dir' []: nothing -> string {
     let store = ($env | get --optional $envs.store | default $defaults.store)
 
@@ -51,7 +55,7 @@ export def 'store dir' []: nothing -> string {
     }
 
     if ($store | path type) != dir {
-        error make { msg: $"'($envs.store)' is not a directory" }
+        err $"'($envs.store)' is not a directory"
     }
 
     $store | path expand
@@ -61,7 +65,7 @@ export def 'store file' []: nothing -> string {
     let data = ($env | get --optional $envs.data | default $defaults.data)
 
     if ($data | path parse | get extension) != toml {
-        error make { msg: $"'($envs.data)' extension should be toml" }
+        err $"'($envs.data)' extension should be toml"
     }
 
     if not ($data | path exists) {
@@ -71,7 +75,7 @@ export def 'store file' []: nothing -> string {
 
     # todo: handle symlinks?
     if ($data | path type) != file {
-        error make { msg: $"'($envs.data)' is not a file" }
+        err $"'($envs.data)' is not a file"
     }
 
     $data | path expand
@@ -365,11 +369,11 @@ export def 'tag list' []: nothing -> list<string> {
 
 export def 'tag rename' [old: string, new: string]: nothing -> nothing {
     if ($old | is-empty) or ($old | str contains ' ') {
-        error make { msg: 'old tag is invalid' }
+        err 'old tag is invalid'
     }
 
     if ($new | is-empty) or ($new | str contains ' ') {
-        error make { msg: 'new tag is invalid' }
+        err 'new tag is invalid'
     }
 
     store-table
