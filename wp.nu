@@ -59,6 +59,7 @@
 #
 # Source: https://github.com/shimeoki/wallpapers. MIT license.
 
+const self = path self
 const repo = path self '.'
 
 const defaults = {
@@ -72,6 +73,25 @@ const envs = {
 }
 
 const extensions = [ png jpg jpeg ]
+
+def gen-help [cmd: string]: nothing -> record {
+    let mod = ($self | path basename | str replace --regex '\.nu$' '')
+    let name = ($'($mod) ($cmd)' | str trim)
+
+    let cmds = (scope commands | where {|e| $e.name | str starts-with $name })
+    let self_cmd = ($cmds | where name == $name)
+
+    let brief = ($self_cmd | get description | first)
+    let extra = ($self_cmd | get extra_description | first)
+    let help = ([ $brief '' $extra '' 'Commands:' ] | str join "\n")
+
+    print $help
+
+    $cmds
+    | where name != $name
+    | select name description
+    | transpose --as-record --header-row
+}
 
 def read []: string -> record {
     let src = ($in | path expand)
