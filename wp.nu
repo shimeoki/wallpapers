@@ -46,6 +46,10 @@
 # either use just the text by itself or prefix it with "author:" or "color:".
 # Your imagination is your only limitation.
 #
+# As an optional data field, which is encouraged to be used in public wallpaper
+# repositories, "source" exists. It is just a string. Most of the commands don't
+# care about the source field, and work with it via an explicit argument.
+#
 # Source: https://github.com/shimeoki/wallpapers. MIT license.
 
 const repo = path self '.'
