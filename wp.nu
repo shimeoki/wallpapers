@@ -286,6 +286,10 @@ def store-git [action: string]: record -> nothing {
     ignore
 }
 
+def store-save []: record -> nothing {
+    save --force (store file)
+}
+
 def get-input []: any -> list<string> {
     let input = $in
 
@@ -306,20 +310,16 @@ export def 'store edit' [
     string -> nothing
     list<string> -> nothing
 ] {
-    let input = ($in | get-input)
-
-    let file = store file
-
-    $input
+    get-input
     | to-wp
     | with-path
     | add-user-data $tags $source $interactive
     | each {|wp|
-        store list | upsert $wp.hash $wp.meta | save --force $file
+        store list | upsert $wp.hash $wp.meta | store-save
 
         if $git { $wp | store-git 'edit' }
         if $interactive { $wp | show 'edited' false }
-    }
+    } | ignore
 }
 
 export def 'store add' [
@@ -332,11 +332,7 @@ export def 'store add' [
     string -> list<string>
     list<string> -> list<string>
 ] {
-    let input = ($in | get-input)
-
-    let file = store file
-
-    $input
+    get-input
     | each { $in | read }
     | new-only
     | add-user-data $tags $source $interactive
@@ -344,7 +340,7 @@ export def 'store add' [
     | with-path
     | each {|wp|
         cp --no-clobber $wp.src $wp.path
-        store list | upsert $wp.hash $wp.meta | save --force $file
+        store list | upsert $wp.hash $wp.meta | store-save
 
         if $git { $wp | store-git 'add' }
         if $interactive { $wp | show 'added' false } else { $wp.hash }
@@ -359,11 +355,7 @@ export def 'store del' [
     string -> nothing
     list<string> -> nothing
 ] {
-    let input = ($in | get-input)
-
-    let file = store file
-
-    $input
+    get-input
     | to-wp
     | with-path
     | each {|wp|
@@ -374,10 +366,10 @@ export def 'store del' [
         }
 
         rm --force $wp.path
-        store list | reject $wp.hash | save --force $file
+        store list | reject $wp.hash | store-save
 
         if $git { $wp | store-git 'del' }
-    }
+    } | ignore
 }
 
 export def 'tag list' []: nothing -> list<string> {
