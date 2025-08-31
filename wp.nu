@@ -557,7 +557,7 @@ export def 'pick any' [
 
     --interactive (-i)
     # If enabled, select additional tags to append to `tags` argument from all
-    # available tags from `tag list`.
+    # available tags via `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | any {|tag| $tag in $dst } } | img path
@@ -573,7 +573,7 @@ export def 'pick all' [
 
     --interactive (-i)
     # If enabled, select additional tags to append to `tags` argument from all
-    # available tags from `tag list`.
+    # available tags via `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
