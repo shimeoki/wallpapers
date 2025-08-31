@@ -354,27 +354,32 @@ export def 'store add' [
 }
 
 export def 'store del' [
-    hash: string
     --git (-g)
-]: nothing -> nothing {
-    let list = store list
+    --interactive (-i)
+]: [
+    nothing -> nothing
+    string -> nothing
+    list<string> -> nothing
+] {
+    let input = ($in | get-input)
+
     let file = store file
+    let dir = store dir
 
-    let meta = ($list | get --optional $hash)
-    if $meta == null {
-        error make { msg: "file is not listed" }
-    }
+    $input
+    | to-wp
+    | with-path $dir
+    | each {|wp|
+        if $interactive {
+            $wp | show 'next' true
+            let confirm = (input --numchar 1 $'(ansi g)confirm?(ansi rst) ')
+            if ($confirm | str downcase) != 'y' { return }
+        }
 
-    let path = store-path $hash $meta.extension
+        rm --force $wp.path
+        store list | reject $wp.hash | save --force $file
 
-    rm --force $path
-    $list | reject $hash | save --force $file
-
-    if ($git) {
-        cd $repo
-        git reset HEAD
-        git add $path $file
-        git commit -m $"store: del ($hash)"
+        if $git { $wp | store-git 'del' }
     }
 }
 
