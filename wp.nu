@@ -564,7 +564,16 @@ export def 'pick all' [
     tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
 }
 
-export def 'pick random' [count?: int]: [
+# Get random paths from the store.
+#
+# By default, all paths from the store are returned.
+#
+# Designed to be used with a wallpaper daemon to change a wallpaper very fast.
+# If you need to specify tags, consider using other `pick` functions.
+export def 'pick random' [
+    count?: int
+    # Number of paths to return. If equals to 1, return type is `string`.
+]: [
     nothing -> string
     nothing -> list<string>
 ] {
