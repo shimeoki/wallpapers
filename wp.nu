@@ -435,4 +435,5 @@ export def --wrapped 'pick fzf' [
     | if not $absolute { $in | path relative-to $env.PWD } else { $in }
 }
 
-export alias add = store add
+export alias a = store add
+export alias e = store edit
