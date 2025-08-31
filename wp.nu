@@ -556,9 +556,17 @@ export def 'pick any' [
     tag filter {|src| $src | any {|tag| $tag in $dst } } | img path
 }
 
+# Get paths from the store where all tags are matched.
+#
+# Doesn't to "exact" matching. For example, `[ tag-1 tag-2 ]` in the function
+# as `tags` matches `[ tag-1 tag-2 tag-3 ]`.
 export def 'pick all' [
     ...tags: string
+    # Tags to match.
+
     --interactive (-i)
+    # If enabled, select additional tags to append to `tags` argument from all
+    # available tags from `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
