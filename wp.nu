@@ -116,17 +116,28 @@ export def 'store path' [
     | if not $absolute { $in | path relative-to $env.PWD } else { $in }
 }
 
-def from-hash [list: record]: list<string> -> list<record> {
-    each {|hash|
-        let wp = ($list | get --optional $hash)
+def to-wp []: list<string> -> list<record> {
+    each {|input|
+        let list = store list
 
-        if $wp == null {
-            null
-        } else {
-            {
-                hash: $hash
-                meta: $wp
+        let from_hash = ($list | get --optional $input)
+        if $from_hash != null {
+            return {
+                hash: $input
+                meta: $from_hash
             }
+        }
+
+        let wp = ($input | read)
+
+        let from_path = ($list | get --optional $wp.hash)
+        if $from_path != null {
+            {
+                hash: $wp.hash
+                meta: $from_path
+            }
+        } else {
+            null
         }
     } | compact
 }
@@ -287,18 +298,17 @@ export def 'store edit' [
 ] {
     let input = $in
 
-    let hashes = if ($input | is-empty) {
-        store list | columns
+    let hashes_or_paths = if ($input | is-empty) {
+        ls | get name
     } else {
         $input | append [] | uniq
     }
 
-    let list = store list
     let file = store file
     let dir = store dir
 
-    $hashes
-    | from-hash $list
+    $hashes_or_paths
+    | to-wp
     | with-path $dir 
     | add-user-data $tags $source $interactive
     | each {|wp|
