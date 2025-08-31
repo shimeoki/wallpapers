@@ -181,6 +181,25 @@ def valid-tags []: list<string> -> bool {
     ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
 }
 
+export def 'store repair' []: nothing -> nothing {
+    ls (store dir) # all?
+    | select name
+    | each {|row|
+        let wp = ($row.name | read)
+        let from_path = (store-map | get --optional $wp.hash)
+
+        if ($from_path != null) {
+            $wp | upsert meta $from_path
+        } else {
+            null
+        }
+    } | compact | with-path | each {|wp|
+        if $wp.path != $wp.src {
+            mv --no-clobber $wp.src $wp.path
+        }
+    } | ignore
+}
+
 export def 'store check' [
     --source (-s)
     --hash (-h)
