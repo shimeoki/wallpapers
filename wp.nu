@@ -142,10 +142,10 @@ def to-wp []: list<string> -> list<record> {
     } | compact
 }
 
-def with-path [dir: string]: list<record> -> list<record> {
+def with-path []: list<record> -> list<record> {
     each {|wp|
         let p = {
-            parent: $dir
+            parent: (store dir)
             stem: $wp.hash
             extension: $wp.meta.extension
         }
@@ -309,11 +309,10 @@ export def 'store edit' [
     let input = ($in | get-input)
 
     let file = store file
-    let dir = store dir
 
     $input
     | to-wp
-    | with-path $dir 
+    | with-path
     | add-user-data $tags $source $interactive
     | each {|wp|
         store list | upsert $wp.hash $wp.meta | save --force $file
@@ -336,14 +335,13 @@ export def 'store add' [
     let input = ($in | get-input)
 
     let file = store file
-    let dir = store dir
 
     $input
     | each { $in | read }
     | new-only
     | add-user-data $tags $source $interactive
     | tags-only
-    | with-path $dir
+    | with-path
     | each {|wp|
         cp --no-clobber $wp.src $wp.path
         store list | upsert $wp.hash $wp.meta | save --force $file
@@ -364,11 +362,10 @@ export def 'store del' [
     let input = ($in | get-input)
 
     let file = store file
-    let dir = store dir
 
     $input
     | to-wp
-    | with-path $dir
+    | with-path
     | each {|wp|
         if $interactive {
             $wp | show 'next' true
