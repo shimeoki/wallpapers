@@ -389,17 +389,22 @@ export def 'tag filter' [filter: closure]: nothing -> list<string> {
     } | compact
 }
 
+def select-tags [interactive: bool]: list<string> -> list<string> {
+    let tags = $in
+
+    if $interactive {
+        let selected = (tag list | input list --multi 'select the tags')
+        $tags | append $selected
+    } else {
+        $tags
+    } | flatten | compact --empty | uniq
+}
+
 export def 'pick any' [
     ...tags: string
     --interactive (-i)
 ]: nothing -> list<string> {
-    let dst = if $interactive {
-        let selected = (tag list | input list --multi 'select the tags')
-        ($tags | append $selected | flatten | uniq)
-    } else {
-        ($tags | flatten | uniq)
-    }
-
+    let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | any {|tag| $tag in $dst } } | store path
 }
 
@@ -407,13 +412,7 @@ export def 'pick all' [
     ...tags: string
     --interactive (-i)
 ]: nothing -> list<string> {
-    let dst = if $interactive {
-        let selected = (tag list | input list --multi 'select the tags')
-        ($tags | append $selected | flatten | uniq)
-    } else {
-        ($tags | flatten | uniq)
-    }
-
+    let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | all {|tag| $tag in $dst } } | store path
 }
 
