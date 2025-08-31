@@ -379,7 +379,7 @@ export def 'tag rename' [old: string, new: string]: nothing -> nothing {
 export def 'tag filter' [filter: closure]: nothing -> list<string> {
     store-table
     | each {|wp|
-        let pass = (do $filter $wp.meta.tags)
+        let pass = do $filter $wp.meta.tags
 
         if $pass {
             $wp.hash
