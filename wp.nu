@@ -254,6 +254,9 @@ def store-git [action: string]: record -> nothing {
 
     cd $repo
 
+    let status = (git status | complete)
+    if $status.exit_code != 0 { return }
+
     git reset HEAD | complete
     git add $store | complete
     git add $wp.path | complete
