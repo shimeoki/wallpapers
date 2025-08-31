@@ -22,26 +22,32 @@ def store-path [hash: string, extension: string]: nothing -> string {
     } | path join
 }
 
-def read []: string -> record<hash: string, extension: string> {
-    let path = $in
+def read []: string -> record {
+    let src = ($in | path expand)
 
-    if not ($path | path exists) {
-        error make { msg: $"'($path)' doesn't exist" }
+    if not ($src | path exists) {
+        error make { msg: $"'($src)' doesn't exist" }
     }
 
     # todo: handle symlinks?
-    if ($path | path type) != file {
-        error make { msg: $"'($path)' is not a file" }
+    if ($src | path type) != file {
+        error make { msg: $"'($src)' is not a file" }
     }
 
-    let extension = ($path | path parse | get extension)
+    let extension = ($src | path parse | get extension)
     if $extension not-in $extensions {
-        error make { msg: $"'($path)' extension is not one of '($extensions)'" }
+        error make { msg: $"'($src)' extension is not one of '($extensions)'" }
     }
 
-    let hash = (open $path | hash sha256)
+    let hash = (open $src | hash sha256)
 
-    { hash: $hash, extension: $extension }
+    {
+        hash: $hash
+        src: $src
+        meta: {
+            extension: $extension
+        }
+    }
 }
 
 export def 'store dir' []: nothing -> string {
@@ -113,29 +119,61 @@ export def 'store path' [
 def from-hash [list: record]: list<string> -> list<record> {
     each {|hash|
         let wp = ($list | get --optional $hash)
-        if $wp != null { { hash: $hash, meta: $wp } } else { null }
+
+        if $wp == null {
+            null
+        } else {
+            {
+                hash: $hash
+                meta: $wp
+            }
+        }
     } | compact
 }
 
 def with-path [dir: string]: list<record> -> list<record> {
     each {|wp|
-        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
-        $wp | insert path ($p | path join | path expand)
+        let p = {
+            parent: $dir
+            stem: $wp.hash
+            extension: $wp.meta.extension
+        }
+
+        let path = ($p | path join | path expand)
+
+        $wp | insert path $path
     }
 }
 
 def show [header: string, image: bool]: record -> nothing {
     let wp = $in
-    let source = ($wp | get source --optional)
 
-    print $"(ansi bb)\n($header):(ansi rst)"
+    print $"(ansi bb)\n($header):(ansi rst)" ''
 
-    if $image { kitten icat --stdin=no $wp.path }
+    if $image {
+        let src = ($wp | get --optional src)
+        let path = ($wp | get --optional path)
 
-    print $'hash: (ansi y)($wp.hash)(ansi rst)'
-    print $'tags: (ansi c)($wp.meta.tags)(ansi rst)'
+        let img = if ($path | is-empty) {
+            $src
+        } else {
+            $path
+        }
 
-    if ($source == null) {
+        kitten icat --stdin=no $img
+    }
+
+    print $'hash: (ansi y)($wp.hash)(ansi rst)' ''
+
+    let tags = ($wp.meta | get --optional tags)
+    if ($tags | is-empty) {
+        print $'(ansi dgr)no tags provided(ansi rst)' ''
+    } else {
+        print $'tags: (ansi c)($tags)(ansi rst)' ''
+    }
+
+    let source = ($wp.meta | get --optional source)
+    if ($source | is-empty) {
         print $'(ansi dgr)no source provided(ansi rst)' ''
     } else {
         print $'source: (ansi b)($source)(ansi rst)' ''
@@ -144,13 +182,69 @@ def show [header: string, image: bool]: record -> nothing {
 
 def add-source [source]: record -> record {
     let wp = $in
-    if ($source | is-empty) { $wp } else { $wp | upsert meta.source $source }
+
+    if ($source | is-empty) {
+        $wp
+    } else {
+        $wp | upsert meta.source $source
+    }
 }
 
 def add-tags [tags: list<string>]: record -> record {
     let wp = $in
+
     let tags = ($tags | flatten | compact --empty | uniq)
-    if ($tags | is-empty) { $wp } else { $wp | upsert meta.tags $tags }
+
+    if ($tags | is-empty) {
+        $wp
+    } else {
+        $wp | upsert meta.tags $tags
+    }
+}
+
+def non-empty-tags []: list<record> -> list<record> {
+    each {|wp|
+        let tags = ($wp.meta | get --optional tags)
+
+        if ($tags | is-empty) {
+            null
+        } else {
+            $wp
+        }
+    } | compact
+}
+
+def user-source [interactive: bool] {
+    let source = $in
+
+    if $interactive and ($source != null) {
+        input $'(ansi g)specify source:(ansi rst) '
+    } else {
+        $source
+    }
+}
+
+def user-tags [interactive: bool]: list<string> -> list<string> {
+    let tags = $in
+
+    if $interactive {
+        input $'(ansi g)specify tags:(ansi rst) ' | split row ' '
+    } else {
+        []
+    } | append $tags
+}
+
+def add-user-data [
+    tags: list<string>
+    source
+    interactive: bool
+]: list<record> -> list<record> {
+    each {|wp|
+        if $interactive { $wp | show 'next' true }
+        let user_tags = ($tags | user-tags $interactive)
+        let user_source = ($source | user-source $interactive)
+        $wp | add-tags $user_tags | add-source $user_source
+    }
 }
 
 def store-git [action: string]: record -> nothing {
@@ -183,26 +277,15 @@ export def 'store edit' [
     let file = store file
     let dir = store dir
 
-    $hashes | from-hash $list | with-path $dir | each {|wp|
-        if $interactive { $wp | show 'next' true }
-
-        let new_tags = (if $interactive {
-            input $'(ansi g)specify tags:(ansi rst) ' | split row ' '
-        } else {
-            []
-        } | append $tags)
-
-        let new_source = if $interactive and ($source != null) {
-            input $'(ansi g)specify source:(ansi rst) '
-        } else {
-            $source
-        }
-
-        $wp | add-tags $new_tags | add-source $new_source
-    } | compact | each {|wp|
+    $hashes
+    | from-hash $list
+    | with-path $dir 
+    | add-user-data $tags $source $interactive
+    | each {|wp|
         store list | upsert $wp.hash $wp.meta | save --force $file
+
         if $git { $wp | store-git 'edit' }
-        if $interactive { $wp | show 'applied' false }
+        if $interactive { $wp | show 'edited' false }
     }
 }
 
@@ -210,46 +293,27 @@ export def 'store add' [
     ...tags: string
     --source (-s): string
     --git (-g)
+    --interactive (-i)
 ]: [
     string -> list<string>
     list<string> -> list<string>
 ] {
-    let paths = ($in | append [] | path expand)
-    cd $repo
-
-    let tags = ($tags | flatten | uniq)
-    if ($tags | is-empty) { error make { msg: "tags are empty" } }
+    let paths = ($in | append [])
 
     let file = store file
     let dir = store dir
 
-    $paths | each {|path|
-        let read = ($path | read)
-
-        let meta = if $source == null { {
-            extension: $read.extension
-            tags: $tags
-        } } else { {
-            extension: $read.extension
-            source: $source
-            tags: $tags
-        } }
-
-        { src: $path, hash: $read.hash, meta: $meta }
-    } | compact | each {|wp|
-        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
-        $wp | insert dst ($p | path join | path expand)
-    } | each {|wp|
-        cp --no-clobber $wp.src $wp.dst
+    $paths
+    | each { $in | read }
+    | add-user-data $tags $source $interactive
+    | non-empty-tags
+    | with-path $dir
+    | each {|wp|
+        cp --no-clobber $wp.src $wp.path
         store list | upsert $wp.hash $wp.meta | save --force $file
 
-        if $git {
-            git reset HEAD | ignore
-            git add $file $wp.dst | ignore
-            git commit -m $"store: add ($wp.hash | str substring ..31)" | ignore
-        }
-
-        $wp.hash
+        if $git { $wp | store-git 'add' }
+        if $interactive { $wp | show 'added' false } else { $wp.hash }
     }
 }
 
