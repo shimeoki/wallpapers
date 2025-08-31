@@ -505,8 +505,21 @@ export def 'pick all' [
     tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
 }
 
-export def 'pick random' []: nothing -> list<string> {
-    store-table | get hash | shuffle | img path
+export def 'pick random' [count?: int]: [
+    nothing -> string
+    nothing -> list<string>
+] {
+    let paths = (store-table | get hash | shuffle | img path)
+
+    if $count == null {
+        $paths
+    } else if $count == 1 {
+        $paths | first
+    } else if $count > 0 {
+        $paths | first $count
+    } else {
+        []
+    }
 }
 
 export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
@@ -524,3 +537,4 @@ export alias d = img del
 export alias p = img path
 export alias v = store verify
 export alias f = pick fzf --preview "fzf-preview.bash r#'{r1}'#"
+export alias r = pick random 1
