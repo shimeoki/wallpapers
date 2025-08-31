@@ -464,3 +464,4 @@ export def --wrapped 'pick fzf' [
 
 export alias a = store add
 export alias e = store edit
+export alias d = store del
