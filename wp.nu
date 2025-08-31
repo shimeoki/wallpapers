@@ -3,13 +3,13 @@
 const repo = path self '.'
 
 const defaults = {
-    store: ($repo | path join 'store')
-    data:  ($repo | path join 'store.toml')
+    dir:  ($repo | path join 'store')
+    file: ($repo | path join 'store.toml')
 }
 
 const envs = {
-    store: 'WP_STORE_DIR'
-    data:  'WP_STORE_FILE'
+    dir:  'WP_DIR'
+    file: 'WP_FILE'
 }
 
 const extensions = [ png jpg jpeg ]
@@ -46,43 +46,43 @@ def err [msg: string]: nothing -> error {
     error make { msg: $'(ansi rb)($msg)(ansi rst)' }
 }
 
-export def 'store dir' []: nothing -> string {
-    let store = ($env | get --optional $envs.store | default $defaults.store)
+export def 'env dir' []: nothing -> string {
+    let dir = ($env | get --optional $envs.dir | default $defaults.dir)
 
-    if not ($store | path exists) {
+    if not ($dir | path exists) {
         # todo: logging?
-        mkdir $store
+        mkdir $dir
     }
 
-    if ($store | path type) != dir {
+    if ($dir | path type) != dir {
         err $"'($envs.store)' is not a directory"
     }
 
-    $store | path expand
+    $dir | path expand
 }
 
-export def 'store file' []: nothing -> string {
-    let data = ($env | get --optional $envs.data | default $defaults.data)
+export def 'env file' []: nothing -> string {
+    let file = ($env | get --optional $envs.file | default $defaults.file)
 
-    if ($data | path parse | get extension) != toml {
+    if ($file | path parse | get extension) != toml {
         err $"'($envs.data)' extension should be toml"
     }
 
-    if not ($data | path exists) {
+    if not ($file | path exists) {
         # todo: logging?
-        touch $data
+        touch $file
     }
 
     # todo: handle symlinks?
-    if ($data | path type) != file {
+    if ($file | path type) != file {
         err $"'($envs.data)' is not a file"
     }
 
-    $data | path expand
+    $file | path expand
 }
 
 def store-map []: nothing -> record {
-    store file | open
+    env file | open
 }
 
 def store-table []: nothing -> table {
@@ -122,7 +122,7 @@ def to-wp []: list<string> -> list<record> {
 def with-path []: list<record> -> list<record> {
     each {|wp|
         let p = {
-            parent: (store dir)
+            parent: (env dir)
             stem: $wp.hash
             extension: $wp.meta.extension
         }
@@ -182,7 +182,7 @@ def valid-tags []: list<string> -> bool {
 }
 
 export def 'store repair' []: nothing -> nothing {
-    ls (store dir) # all?
+    ls (env dir) # all?
     | select name
     | each {|row|
         let wp = ($row.name | read)
@@ -328,7 +328,7 @@ def add-user-data [
 def store-git [action: string]: record -> nothing {
     let wp = $in
     let hash = ($wp.hash | str substring ..31)
-    let store = store file
+    let store = env file
 
     cd $repo
 
@@ -344,7 +344,7 @@ def store-git [action: string]: record -> nothing {
 }
 
 def store-save []: record -> nothing {
-    save --force (store file)
+    save --force (env file)
 }
 
 def get-input []: any -> list<string> {
