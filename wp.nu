@@ -179,7 +179,7 @@ def add-tags [tags: list<string>]: record -> record {
 
     let tags = ($tags | flatten | compact --empty | uniq)
 
-    if ($tags | is-empty) {
+    if ($tags | is-empty) or ($tags | any {|| $in | str contains ' ' } ) {
         $wp
     } else {
         $wp | upsert meta.tags $tags
@@ -364,13 +364,21 @@ export def 'tag list' []: nothing -> list<string> {
 }
 
 export def 'tag rename' [old: string, new: string]: nothing -> nothing {
+    if ($old | is-empty) or ($old | str contains ' ') {
+        error make { msg: 'old tag is invalid' }
+    }
+
+    if ($new | is-empty) or ($new | str contains ' ') {
+        error make { msg: 'new tag is invalid' }
+    }
+
     store-table
     | each {|wp|
-        let tags = ($wp.meta.tags | each {|tag|
-            if ($tag == $old) { $new } else { $tag }
-        } | uniq)
+        let tags = ($wp.meta.tags | each {
+            |tag| if ($tag == $old) { $new } else { $tag }
+        })
 
-        { hash: $wp.hash, meta: ($wp.meta | update tags $tags) }
+        $wp | add-tags $tags
     }
     | table-to-map
     | store-save
