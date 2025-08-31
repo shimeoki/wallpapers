@@ -181,6 +181,19 @@ def valid-tags []: list<string> -> bool {
     ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
 }
 
+export def 'store check' [
+    --source (-s)
+    --hash (-h)
+]: nothing -> nothing {
+    let hashes = store verify --source=$source --hash=$hash
+
+    if ($hashes | is-not-empty) {
+        err "check has failed"
+    }
+
+    ignore
+}
+
 export def 'store verify' [
     --source (-s)
     --hash (-h)
