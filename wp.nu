@@ -46,7 +46,7 @@
 # either use just the text by itself or prefix it with "author:" or "color:".
 # Your imagination is your only limitation.
 #
-# Source: https://github.com/shimeoki/wallpapers
+# Source: https://github.com/shimeoki/wallpapers. MIT license.
 
 const repo = path self '.'
 
