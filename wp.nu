@@ -425,3 +425,4 @@ export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
 export alias a = store add
 export alias e = store edit
 export alias d = store del
+export alias p = store path
