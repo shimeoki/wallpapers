@@ -21,6 +21,19 @@
 # most of the commands mostly use streaming model for the data and accept
 # lists as the input.
 #
+# To be added to the store, images are read and their SHA256 hash is computed.
+# This hash becomes a unique identifier for the image in the store. This means
+# that the same image cannot be added twice to the store.
+#
+# After the image was added to the wallpaper data file, it is copied to the
+# store directory. Because the hashes are unique, the images are listed
+# on a single level without any subdirectories, and the hash is used for the
+# new filename.
+#
+# Original extension is kept intact. Right now only "png", "jpg" and "jpeg"
+# are supported as extensions for safety. Otherwise it would be pretty easy to
+# add a non-image.
+#
 # Source: https://github.com/shimeoki/wallpapers
 
 const repo = path self '.'
