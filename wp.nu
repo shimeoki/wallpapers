@@ -581,7 +581,25 @@ export def 'pick random' [count?: int]: [
     }
 }
 
-export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
+# Get paths from the store via picking tags with `fzf`.
+#
+# Because it uses `fzf`, it is expected to be available. This command is a
+# wrapper, so `args` are passed to `fzf`.
+#
+# Each line passed to `fzf` looks like this: `<path> <tag-1> <tag-2> ...`. But
+# for the picker the path (first field) is hidden.
+#
+# Because this function is pointless without a preview, it's recommended to use
+# one. Though it's hidden, the first field is available for the preview:
+# `--preview "previewer.sh {1}"`.
+#
+# One of the examples is provided as the `f` alias in the module. It uses
+# Nushell raw strings and skips `fzf` escaping, because otherwise the previewer
+# fails if path contains a single quote.
+export def --wrapped 'pick fzf' [
+    ...args: string
+    # Options that are passed to the `fzf` call inside.
+]: nothing -> list<string> {
     store-table
     | with-path
     | each {|wp| $wp.path | append $wp.meta.tags | str join ' ' }
