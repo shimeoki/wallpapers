@@ -548,9 +548,16 @@ def select-tags [interactive: bool]: list<string> -> list<string> {
     } | flatten | compact --empty | uniq
 }
 
+# Get paths from the store where any tag matches.
+#
+# Right now it's case-sensitive, as well as `pick all`.
 export def 'pick any' [
     ...tags: string
+    # Tags to match.
+
     --interactive (-i)
+    # If enabled, select additional tags to append to `tags` argument from all
+    # available tags from `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | any {|tag| $tag in $dst } } | img path
