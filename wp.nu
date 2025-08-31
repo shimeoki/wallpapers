@@ -183,8 +183,10 @@ def valid-tags []: list<string> -> bool {
 
 export def 'store verify' [
     --source (-s)
+    --hash (-h)
 ]: nothing -> list<string> {
     store-table
+    | with-path
     | each {|wp|
         let valid_tags = ($wp.meta.tags | valid-tags)
 
@@ -194,21 +196,16 @@ export def 'store verify' [
             true
         }
 
-        if $valid_tags and $valid_source {
-            null
+        let valid_path = ($wp.path | path exists)
+
+        let valid_hash = if $hash and $valid_path {
+            ($wp.path | read | get hash) == $wp.hash
         } else {
-            $wp.hash
+            true
         }
-    } | compact
-}
 
-export def 'store validate' []: nothing -> list<string> {
-    store-table
-    | with-path
-    | each {|wp|
-        let hash = ($wp.path | read | get hash)
-
-        if $wp.hash == $hash {
+        let checks = [ $valid_tags $valid_source $valid_path $valid_hash ]
+        if ($checks | all {}) {
             null
         } else {
             $wp.hash
