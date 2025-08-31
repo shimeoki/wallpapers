@@ -81,17 +81,6 @@ export def 'store list' []: nothing -> record {
     store file | open
 }
 
-export def 'store path' []: [
-    nothing -> list<string>
-    string -> list<string>
-    list<string> -> list<string>
-] {
-    get-input
-    | to-wp
-    | with-path
-    | get path
-}
-
 def to-wp []: list<string> -> list<record> {
     each {|input|
         let list = store list
@@ -279,28 +268,6 @@ def get-input []: any -> list<string> {
     }
 }
 
-export def 'store edit' [
-    ...tags: string
-    --source (-s): string
-    --git (-g)
-    --interactive (-i)
-]: [
-    nothing -> nothing
-    string -> nothing
-    list<string> -> nothing
-] {
-    get-input
-    | to-wp
-    | with-path
-    | add-user-data $tags $source $interactive
-    | each {|wp|
-        store list | upsert $wp.hash $wp.meta | store-save
-
-        if $git { $wp | store-git 'edit' }
-        if $interactive { $wp | show 'edited' false }
-    } | ignore
-}
-
 export def 'store add' [
     ...tags: string
     --source (-s): string
@@ -326,6 +293,28 @@ export def 'store add' [
     }
 }
 
+export def 'store edit' [
+    ...tags: string
+    --source (-s): string
+    --git (-g)
+    --interactive (-i)
+]: [
+    nothing -> nothing
+    string -> nothing
+    list<string> -> nothing
+] {
+    get-input
+    | to-wp
+    | with-path
+    | add-user-data $tags $source $interactive
+    | each {|wp|
+        store list | upsert $wp.hash $wp.meta | store-save
+
+        if $git { $wp | store-git 'edit' }
+        if $interactive { $wp | show 'edited' false }
+    } | ignore
+}
+
 export def 'store del' [
     --git (-g)
     --interactive (-i)
@@ -349,6 +338,17 @@ export def 'store del' [
 
         if $git { $wp | store-git 'del' }
     } | ignore
+}
+
+export def 'store path' []: [
+    nothing -> list<string>
+    string -> list<string>
+    list<string> -> list<string>
+] {
+    get-input
+    | to-wp
+    | with-path
+    | get path
 }
 
 export def 'tag list' []: nothing -> list<string> {
