@@ -14,14 +14,6 @@ const envs = {
 
 const extensions = [ png jpg jpeg ]
 
-def store-path [hash: string, extension: string]: nothing -> string {
-    {
-        parent: (store dir)
-        stem: $hash
-        extension: $extension
-    } | path join
-}
-
 def read []: string -> record {
     let src = ($in | path expand)
 
@@ -89,31 +81,15 @@ export def 'store list' []: nothing -> record {
     store file | open
 }
 
-export def 'store data' [hash: string]: nothing -> record {
-    store list | get --optional $hash
-}
-
-export def 'store path' [
-    --absolute (-a)
-]: [
+export def 'store path' []: [
+    nothing -> list<string>
     string -> list<string>
     list<string> -> list<string>
 ] {
-    let hashes = ($in | append [])
-    let list = store list
-    let dir = store dir
-
-    $hashes | each {|hash|
-        let wp = ($list | get --optional $hash)
-
-        if $wp != null {
-           { parent: $dir, stem: $hash, extension: $wp.extension } | path join
-        } else {
-            null
-        }
-    }
-    | compact
-    | if not $absolute { $in | path relative-to $env.PWD } else { $in }
+    get-input
+    | to-wp
+    | with-path
+    | get path
 }
 
 def to-wp []: list<string> -> list<record> {
@@ -398,7 +374,6 @@ export def 'tag filter' []: closure -> list<string> {
 
 export def 'pick any' [
     ...tags: string
-    --absolute (-a)
     --interactive (-i)
 ]: nothing -> list<string> {
     let dst = if $interactive {
@@ -410,12 +385,11 @@ export def 'pick any' [
 
     {|src| $src | any {|tag| $tag in $dst } }
     | tag filter
-    | store path --absolute=$absolute
+    | store path
 }
 
 export def 'pick all' [
     ...tags: string
-    --absolute (-a)
     --interactive (-i)
 ]: nothing -> list<string> {
     let dst = if $interactive {
@@ -427,19 +401,14 @@ export def 'pick all' [
 
     {|src| $src | all {|tag| $tag in $dst } }
     | tag filter
-    | store path --absolute=$absolute
+    | store path
 }
 
-export def 'pick random' [
-    --absolute (-a)
-]: nothing -> list<string> {
-    store list | columns | shuffle | store path --absolute=$absolute
+export def 'pick random' []: nothing -> list<string> {
+    store list | columns | shuffle | store path
 }
 
-export def --wrapped 'pick fzf' [
-    ...args: string
-    --absolute (-a)
-]: nothing -> list<string> {
+export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
     let dir = store dir
 
     store list | transpose hash meta | each {|wp|
@@ -448,7 +417,6 @@ export def --wrapped 'pick fzf' [
     } | each {|lst| $lst | str join ' ' } | to text
     | ^fzf --accept-nth='1' --with-nth='2..' ...$args
     | lines
-    | if not $absolute { $in | path relative-to $env.PWD } else { $in }
 }
 
 export alias a = store add
