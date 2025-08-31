@@ -268,10 +268,17 @@ export def 'store edit' [
     --git (-g)
     --interactive (-i)
 ]: [
+    nothing -> nothing
     string -> nothing
     list<string> -> nothing
 ] {
-    let hashes = ($in | append [])
+    let input = $in
+
+    let hashes = if ($input | is-empty) {
+        store list | columns
+    } else {
+        $input | append []
+    }
 
     let list = store list
     let file = store file
@@ -295,10 +302,17 @@ export def 'store add' [
     --git (-g)
     --interactive (-i)
 ]: [
+    nothing -> list<string>
     string -> list<string>
     list<string> -> list<string>
 ] {
-    let paths = ($in | append [])
+    let input = $in
+
+    let paths = if ($input | is-empty) {
+        ls | get name
+    } else {
+        $input | append []
+    }
 
     let file = store file
     let dir = store dir
