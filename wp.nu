@@ -77,15 +77,23 @@ export def 'store file' []: nothing -> string {
     $data | path expand
 }
 
-export def 'store list' []: nothing -> record {
+def store-map []: nothing -> record {
     store file | open
+}
+
+def store-table []: nothing -> table {
+    store-map | transpose hash meta
+}
+
+def table-to-map []: table -> record {
+    transpose --as-record --header-row --ignore-titles
 }
 
 def to-wp []: list<string> -> list<record> {
     each {|input|
-        let list = store list
+        let map = store-map
 
-        let from_hash = ($list | get --optional $input)
+        let from_hash = ($map | get --optional $input)
         if $from_hash != null {
             return {
                 hash: $input
@@ -95,7 +103,7 @@ def to-wp []: list<string> -> list<record> {
 
         let wp = ($input | read)
 
-        let from_path = ($list | get --optional $wp.hash)
+        let from_path = ($map | get --optional $wp.hash)
         if $from_path != null {
             {
                 hash: $wp.hash
@@ -192,8 +200,8 @@ def tags-only []: list<record> -> list<record> {
 
 def new-only []: list<record> -> list<record> {
     each {|wp|
-        # get list every time, otherwise data could be stale
-        let new = (store list | get --optional $wp.hash | is-empty)
+        # get every time, otherwise data could be stale
+        let new = (store-map | get --optional $wp.hash | is-empty)
 
         if $new {
             $wp
@@ -261,7 +269,7 @@ def store-save []: record -> nothing {
 def get-input []: any -> list<string> {
     let input = $in
 
-    if ($input | is-empty) {
+    if ($input == null) {
         ls | get name
     } else {
         $input | append [] | uniq
@@ -286,7 +294,7 @@ export def 'store add' [
     | with-path
     | each {|wp|
         cp --no-clobber $wp.src $wp.path
-        store list | upsert $wp.hash $wp.meta | store-save
+        store-map | upsert $wp.hash $wp.meta | store-save
 
         if $git { $wp | store-git 'add' }
         if $interactive { $wp | show 'added' false } else { $wp.hash }
@@ -308,7 +316,7 @@ export def 'store edit' [
     | with-path
     | add-user-data $tags $source $interactive
     | each {|wp|
-        store list | upsert $wp.hash $wp.meta | store-save
+        store-map | upsert $wp.hash $wp.meta | store-save
 
         if $git { $wp | store-git 'edit' }
         if $interactive { $wp | show 'edited' false }
@@ -334,7 +342,7 @@ export def 'store del' [
         }
 
         rm --force $wp.path
-        store list | reject $wp.hash | store-save
+        store-map | reject $wp.hash | store-save
 
         if $git { $wp | store-git 'del' }
     } | ignore
@@ -352,26 +360,32 @@ export def 'store path' []: [
 }
 
 export def 'tag list' []: nothing -> list<string> {
-    store list | values | get tags | flatten | uniq
+    store-table | get meta.tags | flatten | uniq
 }
 
 export def 'tag rename' [old: string, new: string]: nothing -> nothing {
-    store list | transpose hash meta | each {|wp|
+    store-table
+    | each {|wp|
         let tags = ($wp.meta.tags | each {|tag|
             if ($tag == $old) { $new } else { $tag }
         } | uniq)
 
         { hash: $wp.hash, meta: ($wp.meta | update tags $tags) }
     }
-    | transpose --as-record --header-row --ignore-titles
-    | save --force (store file)
+    | table-to-map
+    | store-save
 }
 
-export def 'tag filter' []: closure -> list<string> {
-    let closure = $in
-    store list | items {|hash, stored|
-        do $closure $stored.tags
-        | if $in { $hash }
+export def 'tag filter' [filter: closure]: nothing -> list<string> {
+    store-table
+    | each {|wp|
+        let pass = (do $filter $wp.meta.tags)
+
+        if $pass {
+            $wp.hash
+        } else {
+            null
+        }
     } | compact
 }
 
@@ -386,9 +400,7 @@ export def 'pick any' [
         ($tags | flatten | uniq)
     }
 
-    {|src| $src | any {|tag| $tag in $dst } }
-    | tag filter
-    | store path
+    tag filter {|src| $src | any {|tag| $tag in $dst } } | store path
 }
 
 export def 'pick all' [
@@ -402,23 +414,19 @@ export def 'pick all' [
         ($tags | flatten | uniq)
     }
 
-    {|src| $src | all {|tag| $tag in $dst } }
-    | tag filter
-    | store path
+    tag filter {|src| $src | all {|tag| $tag in $dst } } | store path
 }
 
 export def 'pick random' []: nothing -> list<string> {
-    store list | columns | shuffle | store path
+    store-table | get hash | shuffle | store path
 }
 
 export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
-    let dir = store dir
-
-    store list | transpose hash meta | each {|wp|
-        let p = { parent: $dir, stem: $wp.hash, extension: $wp.meta.extension }
-        ($p | path join | append $wp.meta.tags)
-    } | each {|lst| $lst | str join ' ' } | to text
-    | ^fzf --accept-nth='1' --with-nth='2..' ...$args
+    store-table
+    | with-path
+    | each {|wp| $wp.path | append $wp.meta.tags | str join ' ' }
+    | to text
+    | fzf --accept-nth='1' --with-nth='2..' ...$args
     | lines
 }
 
