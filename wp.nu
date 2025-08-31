@@ -1,4 +1,6 @@
-#!/usr/bin/env nu
+# Module for managing wallpapers from a hashed store.
+#
+# Source: https://github.com/shimeoki/wallpapers
 
 const repo = path self '.'
 
