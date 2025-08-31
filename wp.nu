@@ -168,25 +168,38 @@ def show [header: string, image: bool]: record -> nothing {
     }
 }
 
+def valid-source []: string -> bool {
+    is-not-empty
+}
+
+def clean-tags []: list<string> -> list<string> {
+    flatten | compact --empty | uniq
+}
+
+def valid-tags []: list<string> -> bool {
+    let tags = $in
+    ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
+}
+
 def add-source [source]: record -> record {
     let wp = $in
 
-    if ($source | is-empty) {
-        $wp
-    } else {
+    if ($source | valid-source) {
         $wp | upsert meta.source $source
+    } else {
+        $wp
     }
 }
 
 def add-tags [tags: list<string>]: record -> record {
     let wp = $in
 
-    let tags = ($tags | flatten | compact --empty | uniq)
+    let tags = ($tags | clean-tags)
 
-    if ($tags | is-empty) or ($tags | any {|| $in | str contains ' ' } ) {
-        $wp
-    } else {
+    if ($tags | valid-tags) {
         $wp | upsert meta.tags $tags
+    } else {
+        $wp
     }
 }
 
