@@ -311,7 +311,7 @@ export def 'store add' [
     let paths = if ($input | is-empty) {
         ls | get name
     } else {
-        $input | append []
+        $input | append [] | uniq
     }
 
     let file = store file
