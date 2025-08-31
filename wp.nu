@@ -522,3 +522,5 @@ export alias a = img add
 export alias e = img edit
 export alias d = img del
 export alias p = img path
+export alias v = store verify
+export alias f = pick fzf --preview "fzf-preview.bash r#'{r1}'#"
