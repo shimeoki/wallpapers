@@ -277,7 +277,7 @@ export def 'store edit' [
     let hashes = if ($input | is-empty) {
         store list | columns
     } else {
-        $input | append []
+        $input | append [] | uniq
     }
 
     let list = store list
