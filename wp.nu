@@ -1,5 +1,26 @@
 # Module for managing wallpapers from a hashed store.
 #
+# This module is used as a helper to manage images in a directory via a TOML
+# file, where all data about the wallpapers is stored.
+#
+# Locations for these entities can be changed via environment variables:
+#
+# `WP_DIR` - directory for the images;
+# `WP_FILE` - file for the wallpaper data;
+#
+# The default values are "./store" and "./store.toml" (relative to the
+# module's location) respectively.
+#
+# TOML is required as a file format and an extension. Though this script uses
+# it's own rules and logic for the wallpapers, it was planned as a helper
+# for a Nix flake, where only JSON and TOML could be read conveniently for this
+# kind of task.
+#
+# Because of this, the module could be pretty inefficient. TOML is not a
+# database and needs to be read and overwritten every time. To compensate,
+# most of the commands mostly use streaming model for the data and accept
+# lists as the input.
+#
 # Source: https://github.com/shimeoki/wallpapers
 
 const repo = path self '.'
