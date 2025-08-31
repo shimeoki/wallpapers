@@ -202,6 +202,20 @@ export def 'store verify' [
     } | compact
 }
 
+export def 'store validate' []: nothing -> list<string> {
+    store-table
+    | with-path
+    | each {|wp|
+        let hash = ($wp.path | read | get hash)
+
+        if $wp.hash == $hash {
+            null
+        } else {
+            $wp.hash
+        }
+    } | compact
+}
+
 def add-source [source]: record -> record {
     let wp = $in
 
