@@ -214,6 +214,19 @@ def tags-only []: list<record> -> list<record> {
     } | compact
 }
 
+def new-only []: list<record> -> list<record> {
+    each {|wp|
+        # get list every time, otherwise data could be stale
+        let new = (store list | get --optional $wp.hash | is-empty)
+
+        if $new {
+            $wp
+        } else {
+            null
+        }
+    }
+}
+
 def user-source [interactive: bool] {
     let source = $in
 
@@ -319,6 +332,7 @@ export def 'store add' [
 
     $paths
     | each { $in | read }
+    | new-only
     | add-user-data $tags $source $interactive
     | tags-only
     | with-path $dir
