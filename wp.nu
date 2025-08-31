@@ -616,7 +616,7 @@ export def 'pick all' [
 # If you need to specify tags, consider using other `pick` functions.
 export def 'pick random' [
     count?: int
-    # Number of paths to return. If equals to 1, return type is `string`.
+    # Number of paths to return. If equals 1, return type is `string`.
 ]: [
     nothing -> string
     nothing -> list<string>
