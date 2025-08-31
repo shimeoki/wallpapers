@@ -558,7 +558,7 @@ export def 'pick any' [
 
 # Get paths from the store where all tags are matched.
 #
-# Doesn't to "exact" matching. For example, `[ tag-1 tag-2 ]` in the function
+# Doesn't do "exact" matching. For example, `[ tag-1 tag-2 ]` in the function
 # as `tags` matches `[ tag-1 tag-2 tag-3 ]`.
 export def 'pick all' [
     ...tags: string
