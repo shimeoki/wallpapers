@@ -34,6 +34,18 @@
 # are supported as extensions for safety. Otherwise it would be pretty easy to
 # add a non-image.
 #
+# The main purpose of this machinery is giving tags to the wallpapers. Tree-like
+# structure (directories) is not the right layout to keep this kind of data.
+# But when managing files is not a concern, something else could be used.
+#
+# For simplicity, only one general type of data is supported: list of strings
+# - tags. Each image has one of those. It cannot be empty and it is required.
+# Each tag should be not empty as well, and cannot contain any spaces.
+#
+# If you would like to use separate "author" or "color" fields, I recommend to
+# either use just the text by itself or prefix it with "author:" or "color:".
+# Your imagination is your only limitation.
+#
 # Source: https://github.com/shimeoki/wallpapers
 
 const repo = path self '.'
