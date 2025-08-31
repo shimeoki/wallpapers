@@ -181,6 +181,27 @@ def valid-tags []: list<string> -> bool {
     ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
 }
 
+export def 'store verify' [
+    --source (-s)
+]: nothing -> list<string> {
+    store-table
+    | each {|wp|
+        let valid_tags = ($wp.meta.tags | valid-tags)
+
+        let valid_source = if $source {
+            $wp.meta | get --optional source | valid-source
+        } else {
+            true
+        }
+
+        if $valid_tags and $valid_source {
+            null
+        } else {
+            $wp.hash
+        }
+    } | compact
+}
+
 def add-source [source]: record -> record {
     let wp = $in
 
