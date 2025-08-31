@@ -202,7 +202,7 @@ def add-tags [tags: list<string>]: record -> record {
     }
 }
 
-def non-empty-tags []: list<record> -> list<record> {
+def tags-only []: list<record> -> list<record> {
     each {|wp|
         let tags = ($wp.meta | get --optional tags)
 
@@ -320,7 +320,7 @@ export def 'store add' [
     $paths
     | each { $in | read }
     | add-user-data $tags $source $interactive
-    | non-empty-tags
+    | tags-only
     | with-path $dir
     | each {|wp|
         cp --no-clobber $wp.src $wp.path
