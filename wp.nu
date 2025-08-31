@@ -568,6 +568,15 @@ def select-tags [interactive: bool]: list<string> -> list<string> {
     } | flatten | compact --empty | uniq
 }
 
+# Namespace for commands to get paths from the store interactively.
+#
+# "pick" commands act as a layer to get paths (most useful in this case)
+# from the store. This could be done manually, but "pick" commands provide
+# interactivity as well.
+#
+# Using this command as is will just produce this help message.
+export def 'pick' []: nothing -> record { gen-help 'pick' }
+
 # Get paths from the store where any tag matches.
 #
 # Right now it's case-sensitive, as well as `pick all`.
