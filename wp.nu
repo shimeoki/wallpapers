@@ -168,7 +168,7 @@ def show [header: string, image: bool]: record -> nothing {
     }
 }
 
-def valid-source []: string -> bool {
+def valid-source []: any -> bool {
     is-not-empty
 }
 
