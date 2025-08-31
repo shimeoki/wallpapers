@@ -286,6 +286,16 @@ def store-git [action: string]: record -> nothing {
     ignore
 }
 
+def get-input []: any -> list<string> {
+    let input = $in
+
+    if ($input | is-empty) {
+        ls | get name
+    } else {
+        $input | append [] | uniq
+    }
+}
+
 export def 'store edit' [
     ...tags: string
     --source (-s): string
@@ -296,18 +306,12 @@ export def 'store edit' [
     string -> nothing
     list<string> -> nothing
 ] {
-    let input = $in
-
-    let hashes_or_paths = if ($input | is-empty) {
-        ls | get name
-    } else {
-        $input | append [] | uniq
-    }
+    let input = ($in | get-input)
 
     let file = store file
     let dir = store dir
 
-    $hashes_or_paths
+    $input
     | to-wp
     | with-path $dir 
     | add-user-data $tags $source $interactive
@@ -329,18 +333,12 @@ export def 'store add' [
     string -> list<string>
     list<string> -> list<string>
 ] {
-    let input = $in
-
-    let paths = if ($input | is-empty) {
-        ls | get name
-    } else {
-        $input | append [] | uniq
-    }
+    let input = ($in | get-input)
 
     let file = store file
     let dir = store dir
 
-    $paths
+    $input
     | each { $in | read }
     | new-only
     | add-user-data $tags $source $interactive
