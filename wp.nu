@@ -357,7 +357,7 @@ def get-input []: any -> list<string> {
     }
 }
 
-export def 'store add' [
+export def 'img add' [
     ...tags: string
     --source (-s): string
     --git (-g)
@@ -382,7 +382,7 @@ export def 'store add' [
     }
 }
 
-export def 'store edit' [
+export def 'img edit' [
     ...tags: string
     --source (-s): string
     --git (-g)
@@ -404,7 +404,7 @@ export def 'store edit' [
     } | ignore
 }
 
-export def 'store del' [
+export def 'img del' [
     --git (-g)
     --interactive (-i)
 ]: [
@@ -429,7 +429,7 @@ export def 'store del' [
     } | ignore
 }
 
-export def 'store path' []: [
+export def 'img path' []: [
     nothing -> list<string>
     string -> list<string>
     list<string> -> list<string>
@@ -494,7 +494,7 @@ export def 'pick any' [
     --interactive (-i)
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
-    tag filter {|src| $src | any {|tag| $tag in $dst } } | store path
+    tag filter {|src| $src | any {|tag| $tag in $dst } } | img path
 }
 
 export def 'pick all' [
@@ -502,11 +502,11 @@ export def 'pick all' [
     --interactive (-i)
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
-    tag filter {|src| $src | all {|tag| $tag in $dst } } | store path
+    tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
 }
 
 export def 'pick random' []: nothing -> list<string> {
-    store-table | get hash | shuffle | store path
+    store-table | get hash | shuffle | img path
 }
 
 export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
@@ -518,7 +518,7 @@ export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
     | lines
 }
 
-export alias a = store add
-export alias e = store edit
-export alias d = store del
-export alias p = store path
+export alias a = img add
+export alias e = img edit
+export alias d = img del
+export alias p = img path
