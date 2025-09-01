@@ -463,11 +463,39 @@ export def 'img add' [
     }
 }
 
+# Edit wallpaper data in the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# If interactive mode is not used, then the command just set the image for the
+# selected wallpapers from the input based on provided `tags` and `source`.
+#
+# Because tags cannot be empty, if they are left empty in non-interactive mode,
+# no tags are actually changed. If the source is not provided, it is not
+# changes as well. But if source is explicitly provided (not `null`), it is
+# changed, even it is an empty string.
+#
+# In interactive mode `tags` and `source` act as a default value. `tags` are
+# appended to all user selected tags, and `source` is used if source is not
+# selected.
+#
+# Because it's just a default value in interactive mode, no arguments are
+# required to use this mode. In this case, if you just skip all the images,
+# then all images remain unedited. That's because only valid data is written
+# to the store, so blank input acts as invalid and is silently ignored.
 export def 'img edit' [
     ...tags: string
+    # Tags to be set on the wallpapers.
+
     --source (-s): string
+    # Source to be set on the wallpapers.
+
     --git (-g)
+    # Use `git` to commit after every edited image.
+
     --interactive (-i)
+    # Interactively enter the data for each image.
 ]: [
     nothing -> nothing
     string -> nothing
