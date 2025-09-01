@@ -508,6 +508,15 @@ export def 'img del' [
     } | ignore
 }
 
+# Get path in the store for the image.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# Returned paths are absolute. If you need to get relative paths, consider using
+# `| path relative-to $env.PWD` pipe after the command. Be careful, because
+# this construct fails under certain conditions. Check the help of the
+# `path relative-to` command for more information.
 export def 'img path' []: [
     nothing -> list<string>
     string -> list<string>
