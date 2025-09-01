@@ -544,7 +544,14 @@ export def 'tag rename' [old: string, new: string]: nothing -> nothing {
     | store-save
 }
 
-export def 'tag filter' [filter: closure]: nothing -> list<string> {
+# Get hashes from the store based on a tag filter.
+#
+# Tags for each wallpaper are passed to the `filter` closure. If the closure
+# returns `true`, then hash of the image is included in the result list.
+export def 'tag filter' [
+    filter: closure
+    # The closure to pass the tags to.
+]: nothing -> list<string> {
     store-table
     | each {|wp|
         let pass = do $filter $wp.meta.tags
