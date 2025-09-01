@@ -523,7 +523,19 @@ export def 'tag list' []: nothing -> list<string> {
     store-table | get meta.tags | flatten | uniq
 }
 
-export def 'tag rename' [old: string, new: string]: nothing -> nothing {
+# Rename a tag in the store.
+#
+# `old` tags in the store are replaced with `new` tags. Tags should be unique,
+# so if two tags after the rename are equal to each other, no duplicates remain.
+#
+# Empty tags and tags with spaced are not allowed. Renaming is global.
+export def 'tag rename' [
+    old: string
+    # Tag to rename.
+
+    new: string
+    # Resulting name for the tag.
+]: nothing -> nothing {
     if ($old | is-empty) or ($old | str contains ' ') {
         err 'old tag is invalid'
     }
