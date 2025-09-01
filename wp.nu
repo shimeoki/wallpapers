@@ -468,6 +468,12 @@ def get-input []: any -> list<string> {
 # Same images have the same hash, so, for example, you can edit a wallpaper
 # in the store from the source image location.
 #
+# By default, current directory filenames are used as the input if user input
+# wasn't provided. That means, for example, you can write "wp img add"
+# to add all files in the current directory in the store or write "wp img del"
+# to delete all wallpapers from the store in any directory if image hashes
+# in the current directory match hashes in the store.
+#
 # These commands provide optional git integration and interactive mode.
 # In interactive mode you can see the images in the terminal (only for kitty
 # terminal), and with git integration enabled every change is commited.
