@@ -519,6 +519,17 @@ export def 'img path' []: [
     | get path
 }
 
+# Namespace for commands to manage tags in the store.
+#
+# These commands, opposed to "pick" commands, are using hashes and not
+# interactive.
+#
+# "tag filter" is designed to be used with a custom wrapper (see "pick")
+# commands, but "tag list" and "tag rename" could be used as is.
+export def 'tag' []: nothing -> record {
+    gen-help 'tag'
+}
+
 # Get all tags from the store.
 #
 # This function could be used to find mistyped tags or be used in completions
