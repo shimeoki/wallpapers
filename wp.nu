@@ -462,9 +462,7 @@ def get-input []: any -> list<string> {
 # These commands are "streamed", so even if you cancelled the command early
 # with Ctrl+C or just exited the shell, all changes done until the exit are
 # already applied.
-export def 'img' []: nothing -> record {
-    gen-help 'img'
-}
+export def 'img' []: nothing -> record { gen-help 'img' }
 
 # Add wallpapers to the store.
 #
