@@ -438,6 +438,34 @@ def get-input []: any -> list<string> {
     }
 }
 
+# Namespace for commands to manage wallpapers in the store.
+#
+# These commands use a very forgiving input. You can either provide a hash
+# directly or just a path.
+#
+# Hash is just a hash from the store. Could be useful for "img del" and
+# "img edit" commands, but not for the "img add".
+#
+# If a provided string is not a valid hash in the store, it is assumed to
+# be a path. Images on these paths are read, and their hash is used as the
+# input.
+#
+# Because of that, you can either provide a path in the store for the image
+# (if the store is not corrupted) or a path to any image in the filesystem.
+# Same images have the same hash, so, for example, you can edit a wallpaper
+# in the store from the source image location.
+#
+# These commands provide optional git integration and interactive mode.
+# In interactive mode you can see the images in the terminal (only for kitty
+# terminal), and with git integration enabled every change is commited.
+#
+# These commands are "streamed", so even if you cancelled the command early
+# with Ctrl+C or just exited the shell, all changes done until the exit are
+# already applied.
+export def 'img' []: nothing -> record {
+    gen-help 'img'
+}
+
 # Add wallpapers to the store.
 #
 # To get information about the valid inputs, consider reading help for `img`
