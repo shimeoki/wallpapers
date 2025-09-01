@@ -438,11 +438,40 @@ def get-input []: any -> list<string> {
     }
 }
 
+# Add wallpapers to the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# If interactive mode is not used, then the command just set the data for the
+# new wallpapers from the input based on provided `tags` and `source`.
+#
+# Because tags cannot be empty, if they are left empty in non-interactive mode,
+# no wallpapers are actually added.
+#
+# In interactive mode `tags` and `source` act as a default value. `tags` are
+# appended to all user selected tags, and `source` is used if source is not
+# selected.
+#
+# Because it's just a default value in interactive mode, no arguments are
+# required to use this mode. In this case, if you just skip all the images,
+# then all images are not added. That's because only valid data is written
+# to the store, so blank input acts as invalid and is silently ignored.
+#
+# You cannot add the same image twice to the store. If you want to edit an
+# image, consider using `img edit` command. Input that's not "new" is ignored.
 export def 'img add' [
     ...tags: string
+    # Tags to be set on the wallpapers.
+
     --source (-s): string
+    # Source to be set on the wallpapers.
+
     --git (-g)
+    # Use `git` to commit after every added image.
+
     --interactive (-i)
+    # Interactively enter the data for each image.
 ]: [
     nothing -> list<string>
     string -> list<string>
