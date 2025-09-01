@@ -468,7 +468,7 @@ export def 'img add' [
 # To get information about the valid inputs, consider reading help for `img`
 # command.
 #
-# If interactive mode is not used, then the command just set the image for the
+# If interactive mode is not used, then the command just set the data for the
 # selected wallpapers from the input based on provided `tags` and `source`.
 #
 # Because tags cannot be empty, if they are left empty in non-interactive mode,
