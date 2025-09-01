@@ -262,6 +262,19 @@ def valid-tags []: list<string> -> bool {
     ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
 }
 
+# Manage your wallpapers from the hashed store!
+#
+# All commands are contained under a namespace, so it should contain two words.
+# For example, "img add" is a command and "img" is a namespace.
+#
+# Namespaces are used to provide help on grouped commands and tab completion.
+# Using them just outputs a help message for the namespace and subcommands.
+#
+# I recommend checking out the help for the module itself (at the top of the
+# file) first to get the concept, and then reading about the "img" and "pick"
+# commands.
+export def 'main' []: nothing -> record { gen-help '' }
+
 export def 'store repair' []: nothing -> nothing {
     ls (env dir) # all?
     | select name
