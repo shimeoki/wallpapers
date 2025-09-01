@@ -483,9 +483,19 @@ export def 'img edit' [
     } | ignore
 }
 
+# Delete images from the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# Image is deleted both from the file and the directory. Initial source for the
+# image is untouched, because the module doesn't even keep this information.
 export def 'img del' [
     --git (-g)
+    # Use `git` to commit after every deleted image.
+
     --interactive (-i)
+    # Interactively select the images to delete.
 ]: [
     nothing -> nothing
     string -> nothing
