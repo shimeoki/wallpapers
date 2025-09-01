@@ -519,6 +519,10 @@ export def 'img path' []: [
     | get path
 }
 
+# Get all tags from the store.
+#
+# This function could be used to find mistyped tags or be used in completions
+# or interactive menus, how it's done in `pick` commands.
 export def 'tag list' []: nothing -> list<string> {
     store-table | get meta.tags | flatten | uniq
 }
