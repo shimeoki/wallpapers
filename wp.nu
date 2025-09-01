@@ -57,6 +57,8 @@
 # - Interactive commands (`--interactive` flag): kitty terminal emulator;
 # - `pick fzf`: fzf;
 #
+# Git integration assumes that this module is located in a git repository.
+#
 # Source: https://github.com/shimeoki/wallpapers. MIT license.
 
 const self = path self
