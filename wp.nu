@@ -275,6 +275,10 @@ def valid-tags []: list<string> -> bool {
 # commands.
 export def 'main' []: nothing -> record { gen-help '' }
 
+# Try to repair invalid images in the store.
+#
+# Goes through the store directory and renames the corresponding image to
+# a valid name, if it is listed in the store file.
 export def 'store repair' []: nothing -> nothing {
     ls (env dir) # all?
     | select name
