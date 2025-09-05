@@ -307,9 +307,26 @@ export def 'store check' [
     ignore
 }
 
+# Get a list of invalid wallpapers in the store.
+#
+# If at least one check has failed for the image, then it's included in the
+# resulting list.
+#
+# Checks:
+#
+# - Tags should be present;
+# - Tags shouldn't be empty;
+# - Tags shouldn't contain spaces;
+# - Image should exist in the directory;
+# - Hash of the image should match (`--hash` flag only);
+# - Source should be present (`--source` flag only);
+# - Source shouldn't be empty (`--source` flag only);
 export def 'store verify' [
     --source (-s)
+    # Check for the source field.
+
     --hash (-h)
+    # Check for hash validity (probably slower).
 ]: nothing -> list<string> {
     store-table
     | with-path
