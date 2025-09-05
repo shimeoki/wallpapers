@@ -11,23 +11,23 @@ Initially this repository was made to provide wallpapers for my
 no `flake.nix` for now.
 
 I wanted to provide a framework for myself to conveniently manage the wallpapers
-before actually adding them. One part is done: it's the [wp script](#wp).
+before actually adding them. One part is done: it's the [wp module](#wp).
 
 My priorities are on other things right now, so I don't know when I will be able
 to add Nix functionality and add the wallpapers after that.
 
 ## wp
 
-It's a Nushell script for managing wallpapers from the terminal.
+It's a Nushell module for managing wallpapers from the terminal.
 
-All relevant documentation is provided in the script itself. I recommend to read
+All relevant documentation is provided in the module itself. I recommend to read
 the huge comment at the top, which serves as the help for the module in general.
 
-The script is mostly complete and should be fully usable right now. Though the
+The module is mostly complete and should be fully usable right now. Though the
 command's signatures are not considered stable and breaking changes should be
 expected.
 
-If you want to try it yourself, after you have acquired the script file (either
+If you want to try it yourself, after you have acquired the module file (either
 by cloning the repository or just copying `wp.nu`), add this to your
 configuration:
 
