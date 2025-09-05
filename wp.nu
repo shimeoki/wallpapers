@@ -1,5 +1,67 @@
-#!/usr/bin/env nu
+# Module for managing wallpapers from a hashed store.
+#
+# This module is used as a helper to manage images in a directory via a TOML
+# file, where all data about the wallpapers is stored.
+#
+# Locations for these entities can be changed via environment variables:
+#
+# `WP_DIR` - directory for the images;
+# `WP_FILE` - file for the wallpaper data;
+#
+# The default values are "./store" and "./store.toml" (relative to the
+# module's location) respectively.
+#
+# TOML is required as a file format and an extension. Though this script uses
+# it's own rules and logic for the wallpapers, it was planned as a helper
+# for a Nix flake, where only JSON and TOML could be read conveniently for this
+# kind of task.
+#
+# Because of this, the module could be pretty inefficient. TOML is not a
+# database and needs to be read and overwritten every time. To compensate,
+# most of the commands mostly use streaming model for the data and accept
+# lists as the input.
+#
+# To be added to the store, images are read and their SHA256 hash is computed.
+# This hash becomes a unique identifier for the image in the store. This means
+# that the same image cannot be added twice to the store.
+#
+# After the image was added to the wallpaper data file, it is copied to the
+# store directory. Because the hashes are unique, the images are listed
+# on a single level without any subdirectories, and the hash is used for the
+# new filename.
+#
+# Original extension is kept intact. Right now only "png", "jpg" and "jpeg"
+# are supported as extensions for safety. Otherwise it would be pretty easy to
+# add a non-image.
+#
+# The main purpose of this machinery is giving tags to the wallpapers. Tree-like
+# structure (directories) is not the right layout to keep this kind of data.
+# But when managing files is not a concern, something else could be used.
+#
+# For simplicity, only one general type of data is supported: list of strings
+# - tags. Each image has one of those. It cannot be empty and it is required.
+# Each tag should be not empty as well, and cannot contain any spaces.
+#
+# If you would like to use separate "author" or "color" fields, I recommend to
+# either use just the text by itself or prefix it with "author:" or "color:".
+# Your imagination is your only limitation.
+#
+# As an optional data field, which is encouraged to be used in public wallpaper
+# repositories, "source" exists. It is just a string. Most of the commands don't
+# care about the source field, and work with it via an explicit argument.
+#
+# It is a Nushell module, so it works cross-platform on a basic level. But
+# some additional dependencies are required to use the following:
+#
+# - Git integration: git;
+# - Interactive commands (`--interactive` flag): kitty terminal emulator;
+# - `pick fzf`: fzf;
+#
+# Git integration assumes that this module is located in a git repository.
+#
+# Source: https://github.com/shimeoki/wallpapers. MIT license.
 
+const self = path self
 const repo = path self '.'
 
 const defaults = {
@@ -13,6 +75,25 @@ const envs = {
 }
 
 const extensions = [ png jpg jpeg ]
+
+def gen-help [cmd: string]: nothing -> record {
+    let mod = ($self | path basename | str replace --regex '\.nu$' '')
+    let name = ($'($mod) ($cmd)' | str trim)
+
+    let cmds = (scope commands | where {|e| $e.name | str starts-with $name })
+    let self_cmd = ($cmds | where name == $name)
+
+    let brief = ($self_cmd | get description | first)
+    let extra = ($self_cmd | get extra_description | first)
+    let help = ([ $brief '' $extra '' 'Commands:' ] | str join "\n")
+
+    print $help
+
+    $cmds
+    | where name != $name
+    | select name description
+    | transpose --as-record --header-row
+}
 
 def read []: string -> record {
     let src = ($in | path expand)
@@ -46,6 +127,18 @@ def err [msg: string]: nothing -> error {
     error make { msg: $'(ansi rb)($msg)(ansi rst)' }
 }
 
+# Namespace for getting values of defined environment variables.
+#
+# Kept public for the purpose of usage for your own needs. For example,
+# `cd`ing into the directory or moving the store.
+#
+# Returned path from the functions are absolute.
+#
+# Environment variable names can be viewed in the module documentation or
+# in the source code directly.
+export def 'env' []: nothing -> record { gen-help 'env' }
+
+# Get the path of the store directory.
 export def 'env dir' []: nothing -> string {
     let dir = ($env | get --optional $envs.dir | default $defaults.dir)
 
@@ -61,6 +154,7 @@ export def 'env dir' []: nothing -> string {
     $dir | path expand
 }
 
+# Get the path of the store file.
 export def 'env file' []: nothing -> string {
     let file = ($env | get --optional $envs.file | default $defaults.file)
 
@@ -181,6 +275,34 @@ def valid-tags []: list<string> -> bool {
     ($tags | is-not-empty) and not ($tags | any {|| $in | str contains ' ' })
 }
 
+# Manage your wallpapers from the hashed store!
+#
+# All commands are contained under a namespace, so it should contain two words.
+# For example, "img add" is a command and "img" is a namespace.
+#
+# Namespaces are used to provide help on grouped commands and tab completion.
+# Using them just outputs a help message for the namespace and subcommands.
+#
+# I recommend checking out the help for the module itself (at the top of the
+# file) first to get the concept, and then reading about the "img" and "pick"
+# commands.
+export def 'main' []: nothing -> record { gen-help '' }
+
+# Namespace for commands to manage the store validity.
+#
+# There is not much to say except for that these commands are pretty basic.
+# It is mostly expected to be used in public repositories to not accidentally
+# commit an invalid state. Even if you don't make any mistakes, if a fork is
+# created to file a PR, the author of the PR could make a mistake.
+#
+# These commands are not magic and cannot generate images back from the hashes
+# or revert the state, so it's probably the best to use Git while at it.
+export def 'store' []: nothing -> record { gen-help 'store' }
+
+# Try to repair invalid images in the store.
+#
+# Goes through the store directory and renames the corresponding image to
+# a valid name, if it is listed in the store file.
 export def 'store repair' []: nothing -> nothing {
     ls (env dir) # all?
     | select name
@@ -200,9 +322,16 @@ export def 'store repair' []: nothing -> nothing {
     } | ignore
 }
 
+# Check if the store has invalid wallpapers.
+#
+# Essentially, just a wrapper for `verify` for usage in scripts:
+# errors if the result of `verify` call result is not empty.
 export def 'store check' [
     --source (-s)
+    # Check for the source field.
+
     --hash (-h)
+    # Check for hash validity (probably slower).
 ]: nothing -> nothing {
     let hashes = store verify --source=$source --hash=$hash
 
@@ -213,9 +342,26 @@ export def 'store check' [
     ignore
 }
 
+# Get a list of invalid wallpapers in the store.
+#
+# If at least one check has failed for the image, then it's included in the
+# resulting list.
+#
+# Checks:
+#
+# - Tags should be present;
+# - Tags shouldn't be empty;
+# - Tags shouldn't contain spaces;
+# - Image should exist in the directory;
+# - Hash of the image should match (`--hash` flag only);
+# - Source should be present (`--source` flag only);
+# - Source shouldn't be empty (`--source` flag only);
 export def 'store verify' [
     --source (-s)
+    # Check for the source field.
+
     --hash (-h)
+    # Check for hash validity (probably slower).
 ]: nothing -> list<string> {
     store-table
     | with-path
@@ -357,11 +503,72 @@ def get-input []: any -> list<string> {
     }
 }
 
+# Namespace for commands to manage wallpapers in the store.
+#
+# These commands use a very forgiving input. You can either provide a hash
+# directly or just a path.
+#
+# Hash is just a hash from the store. Could be useful for "img del" and
+# "img edit" commands, but not for the "img add".
+#
+# If a provided string is not a valid hash in the store, it is assumed to
+# be a path. Images on these paths are read, and their hash is used as the
+# input.
+#
+# Because of that, you can either provide a path in the store for the image
+# (if the store is not corrupted) or a path to any image in the filesystem.
+# Same images have the same hash, so, for example, you can edit a wallpaper
+# in the store from the source image location.
+#
+# By default, current directory filenames are used as the input if user input
+# wasn't provided. That means, for example, you can write "wp img add"
+# to add all files in the current directory in the store or write "wp img del"
+# to delete all wallpapers from the store in any directory if image hashes
+# in the current directory match hashes in the store.
+#
+# These commands provide optional git integration and interactive mode.
+# In interactive mode you can see the images in the terminal (only for kitty
+# terminal), and with git integration enabled every change is commited.
+#
+# These commands are "streamed", so even if you cancelled the command early
+# with Ctrl+C or just exited the shell, all changes done until the exit are
+# already applied.
+export def 'img' []: nothing -> record { gen-help 'img' }
+
+# Add wallpapers to the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# If interactive mode is not used, then the command just set the data for the
+# new wallpapers from the input based on provided `tags` and `source`.
+#
+# Because tags cannot be empty, if they are left empty in non-interactive mode,
+# no wallpapers are actually added.
+#
+# In interactive mode `tags` and `source` act as a default value. `tags` are
+# appended to all user selected tags, and `source` is used if source is not
+# selected.
+#
+# Because it's just a default value in interactive mode, no arguments are
+# required to use this mode. In this case, if you just skip all the images,
+# then all images are not added. That's because only valid data is written
+# to the store, so blank input acts as invalid and is silently ignored.
+#
+# You cannot add the same image twice to the store. If you want to edit an
+# image, consider using `img edit` command. Input that's not "new" is ignored.
 export def 'img add' [
     ...tags: string
+    # Tags to be set on the wallpapers.
+
     --source (-s): string
+    # Source to be set on the wallpapers.
+
     --git (-g)
+    # Use `git` to commit after every added image.
+
     --interactive (-i)
+    # Interactively enter the data for each image.
 ]: [
     nothing -> list<string>
     string -> list<string>
@@ -382,11 +589,39 @@ export def 'img add' [
     }
 }
 
+# Edit wallpaper data in the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# If interactive mode is not used, then the command just set the data for the
+# selected wallpapers from the input based on provided `tags` and `source`.
+#
+# Because tags cannot be empty, if they are left empty in non-interactive mode,
+# no tags are actually changed. If the source is not provided, it is not
+# changes as well. But if source is explicitly provided (not `null`), it is
+# changed, even it is an empty string.
+#
+# In interactive mode `tags` and `source` act as a default value. `tags` are
+# appended to all user selected tags, and `source` is used if source is not
+# selected.
+#
+# Because it's just a default value in interactive mode, no arguments are
+# required to use this mode. In this case, if you just skip all the images,
+# then all images remain unedited. That's because only valid data is written
+# to the store, so blank input acts as invalid and is silently ignored.
 export def 'img edit' [
     ...tags: string
+    # Tags to be set on the wallpapers.
+
     --source (-s): string
+    # Source to be set on the wallpapers.
+
     --git (-g)
+    # Use `git` to commit after every edited image.
+
     --interactive (-i)
+    # Interactively enter the data for each image.
 ]: [
     nothing -> nothing
     string -> nothing
@@ -404,9 +639,19 @@ export def 'img edit' [
     } | ignore
 }
 
+# Delete images from the store.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# Image is deleted both from the file and the directory. Initial source for the
+# image is untouched, because the module doesn't even keep this information.
 export def 'img del' [
     --git (-g)
+    # Use `git` to commit after every deleted image.
+
     --interactive (-i)
+    # Interactively select the images to delete.
 ]: [
     nothing -> nothing
     string -> nothing
@@ -429,6 +674,15 @@ export def 'img del' [
     } | ignore
 }
 
+# Get path in the store for the image.
+#
+# To get information about the valid inputs, consider reading help for `img`
+# command.
+#
+# Returned paths are absolute. If you need to get relative paths, consider using
+# `| path relative-to $env.PWD` pipe after the command. Be careful, because
+# this construct fails under certain conditions. Check the help of the
+# `path relative-to` command for more information.
 export def 'img path' []: [
     nothing -> list<string>
     string -> list<string>
@@ -440,11 +694,38 @@ export def 'img path' []: [
     | get path
 }
 
+# Namespace for commands to manage tags in the store.
+#
+# These commands, opposed to "pick" commands, are using hashes and not
+# interactive.
+#
+# "tag filter" is designed to be used with a custom wrapper (see "pick")
+# commands, but "tag list" and "tag rename" could be used as is.
+export def 'tag' []: nothing -> record {
+    gen-help 'tag'
+}
+
+# Get all tags from the store.
+#
+# This function could be used to find mistyped tags or be used in completions
+# or interactive menus, how it's done in `pick` commands.
 export def 'tag list' []: nothing -> list<string> {
     store-table | get meta.tags | flatten | uniq
 }
 
-export def 'tag rename' [old: string, new: string]: nothing -> nothing {
+# Rename a tag in the store.
+#
+# `old` tags in the store are replaced with `new` tags. Tags should be unique,
+# so if two tags after the rename are equal to each other, no duplicates remain.
+#
+# Empty tags and tags with spaced are not allowed. Renaming is global.
+export def 'tag rename' [
+    old: string
+    # Tag to rename.
+
+    new: string
+    # Resulting name for the tag.
+]: nothing -> nothing {
     if ($old | is-empty) or ($old | str contains ' ') {
         err 'old tag is invalid'
     }
@@ -465,7 +746,14 @@ export def 'tag rename' [old: string, new: string]: nothing -> nothing {
     | store-save
 }
 
-export def 'tag filter' [filter: closure]: nothing -> list<string> {
+# Get hashes from the store based on a tag filter.
+#
+# Tags for each wallpaper are passed to the `filter` closure. If the closure
+# returns `true`, then hash of the image is included in the result list.
+export def 'tag filter' [
+    filter: closure
+    # The closure to pass the tags to.
+]: nothing -> list<string> {
     store-table
     | each {|wp|
         let pass = do $filter $wp.meta.tags
@@ -489,23 +777,56 @@ def select-tags [interactive: bool]: list<string> -> list<string> {
     } | flatten | compact --empty | uniq
 }
 
+# Namespace for commands to get paths from the store interactively.
+#
+# "pick" commands act as a layer to get paths (most useful in this case)
+# from the store. This could be done manually, but "pick" commands provide
+# interactivity as well.
+#
+# Using this command as is will just produce this help message.
+export def 'pick' []: nothing -> record { gen-help 'pick' }
+
+# Get paths from the store where any tag matches.
+#
+# Right now it's case-sensitive, as well as `pick all`.
 export def 'pick any' [
     ...tags: string
+    # Tags to match.
+
     --interactive (-i)
+    # If enabled, select additional tags to append to `tags` argument from all
+    # available tags via `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | any {|tag| $tag in $dst } } | img path
 }
 
+# Get paths from the store where all tags are matched.
+#
+# Doesn't do "exact" matching. For example, `[ tag-1 tag-2 ]` in the function
+# as `tags` matches `[ tag-1 tag-2 tag-3 ]`.
 export def 'pick all' [
     ...tags: string
+    # Tags to match.
+
     --interactive (-i)
+    # If enabled, select additional tags to append to `tags` argument from all
+    # available tags via `tag list`.
 ]: nothing -> list<string> {
     let dst = ($tags | select-tags $interactive)
     tag filter {|src| $src | all {|tag| $tag in $dst } } | img path
 }
 
-export def 'pick random' [count?: int]: [
+# Get random paths from the store.
+#
+# By default, all paths from the store are returned.
+#
+# Designed to be used with a wallpaper daemon to change a wallpaper very fast.
+# If you need to specify tags, consider using other `pick` functions.
+export def 'pick random' [
+    count?: int
+    # Number of paths to return. If equals 1, return type is `string`.
+]: [
     nothing -> string
     nothing -> list<string>
 ] {
@@ -522,7 +843,25 @@ export def 'pick random' [count?: int]: [
     }
 }
 
-export def --wrapped 'pick fzf' [...args: string]: nothing -> list<string> {
+# Get paths from the store via picking tags with `fzf`.
+#
+# Because it uses `fzf`, it is expected to be available. This command is a
+# wrapper, so `args` are passed to `fzf`.
+#
+# Each line passed to `fzf` looks like this: `<path> <tag-1> <tag-2> ...`. But
+# for the picker the path (first field) is hidden.
+#
+# Because this function is pointless without a preview, it's recommended to use
+# one. Though it's hidden, the first field is available for the preview:
+# `--preview "previewer.sh {1}"`.
+#
+# One of the examples is provided as the `f` alias in the module. It uses
+# Nushell raw strings and skips `fzf` escaping, because otherwise the previewer
+# fails if path contains a single quote.
+export def --wrapped 'pick fzf' [
+    ...args: string
+    # Options that are passed to the `fzf` call inside.
+]: nothing -> list<string> {
     store-table
     | with-path
     | each {|wp| $wp.path | append $wp.meta.tags | str join ' ' }
