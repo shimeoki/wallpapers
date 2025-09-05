@@ -294,9 +294,16 @@ export def 'store repair' []: nothing -> nothing {
     } | ignore
 }
 
+# Check if the store has invalid wallpapers.
+#
+# Essentially, just a wrapper for `verify` for usage in scripts:
+# errors if the result of `verify` call result is not empty.
 export def 'store check' [
     --source (-s)
+    # Check for the source field.
+
     --hash (-h)
+    # Check for hash validity (probably slower).
 ]: nothing -> nothing {
     let hashes = store verify --source=$source --hash=$hash
 
