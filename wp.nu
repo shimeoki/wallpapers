@@ -275,6 +275,17 @@ def valid-tags []: list<string> -> bool {
 # commands.
 export def 'main' []: nothing -> record { gen-help '' }
 
+# Namespace for commands to manage the store validity.
+#
+# There is not much to say except for that these commands are pretty basic.
+# It is mostly expected to be used in public repositories to not accidentally
+# commit an invalid state. Even if you don't make any mistakes, if a fork is
+# created to file a PR, the author of the PR could make a mistake.
+#
+# These commands are not magic and cannot generate images back from the hashes
+# or revert the state, so it's probably the best to use Git while at it.
+export def 'store' []: nothing -> record { gen-help 'store' }
+
 # Try to repair invalid images in the store.
 #
 # Goes through the store directory and renames the corresponding image to
