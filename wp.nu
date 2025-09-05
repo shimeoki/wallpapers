@@ -127,6 +127,18 @@ def err [msg: string]: nothing -> error {
     error make { msg: $'(ansi rb)($msg)(ansi rst)' }
 }
 
+# Namespace for getting values of defined environment variables.
+#
+# Kept public for the purpose of usage for your own needs. For example,
+# `cd`ing into the directory or moving the store.
+#
+# Returned path from the functions are absolute.
+#
+# Environment variable names can be viewed in the module documentation or
+# in the source code directly.
+export def 'env' []: nothing -> record { gen-help 'env' }
+
+# Get the path of the store directory.
 export def 'env dir' []: nothing -> string {
     let dir = ($env | get --optional $envs.dir | default $defaults.dir)
 
@@ -142,6 +154,7 @@ export def 'env dir' []: nothing -> string {
     $dir | path expand
 }
 
+# Get the path of the store file.
 export def 'env file' []: nothing -> string {
     let file = ($env | get --optional $envs.file | default $defaults.file)
 
